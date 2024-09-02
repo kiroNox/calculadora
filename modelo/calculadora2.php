@@ -10,6 +10,7 @@ trait Calculadora2{
 	PRIVATE $calc_posicion;
 	PRIVATE $calc_items;
 	PRIVATE $counter_loop;
+	PRIVATE $calc_error;
 
 
 
@@ -17,6 +18,7 @@ trait Calculadora2{
 		$this->calc_var = new stdClass();
 		$this->calc_f = new stdClass();
 		$this->calc_var->vacio=true; // TODO quitar esto
+		$this->calc_error = null;
 
 		$this->calc_separadores[] = '\\+';
 		$this->calc_separadores[] = '\\-';
@@ -42,13 +44,37 @@ trait Calculadora2{
 	}
 
 	PRIVATE function add_calc_system_function(){
+		
 		$fun = function(){
-			return 7;
+
+			$resultado = null;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT TIMESTAMPDIFF(YEAR, t.creado ,CURRENT_DATE) as tiempo from trabajadores as t WHERE id_trabajador = ?");
+					$consulta->execute([$this->id_trabajador]);
+					$resp = $consulta->fetch(PDO::FETCH_ASSOC);
+					$resultado = intval($resp["tiempo"]);
+
+				}
+				else{
+					throw new Exception("El trabajador no existe", 1);
+					
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
 		};
 		$this->set_calc_function("TIEMPO_TRABAJADOR",$fun,false);
 
 		$fun = function(){
-			return 10;
+			return $this->id_trabajador;
 		};
 		$this->set_calc_function("GALLETAS",$fun,false);
 
@@ -64,6 +90,7 @@ trait Calculadora2{
 			$this->set_calc_formula($string); // guardo la formula original
 			$this->calc_separador(); // separo los elementos
 			$this->calc_variables(); // remplazo las variables
+			//$this->calc_items = $this->calc_functions(); // evalua las funciones del sistema
 			$this->calc_items = $this->calc_groups(); // asigno los grupos
 
 			$r["total"] = $this->resolve_groups();
@@ -136,6 +163,7 @@ trait Calculadora2{
 
 	PRIVATE function calc_check_status(){
 		if(!$this->calc_status) throw new Exception("Calculadora no inicializada", 1);
+		if($this->calc_error) throw new Exception($this->calc_error, 1);
 	}
 
 	PRIVATE function calc_separador (){
@@ -237,37 +265,6 @@ trait Calculadora2{
 		}
 	}
 
-
-	PRIVATE function calc_functions(){ // NO SE ESTA USANDO
-		$new_formula_array = [];
-		for($i=0;$i<count($this->calc_items);$i++){
-			$token = $this->calc_items[$i];
-			if($temp_func = $this->get_calc_function($token)){//si encuentra un token como función
-				//$this->calc_items[$key] = $temp;
-				if($temp_func->has_arguments()){// si pide un argumento
-					if(isset($this->calc_items[($i+1)]) and count($this->calc_items[($i+1)]) == 1 ){ // revisa que el siguiente sea un grupo de solo un valor
-						$resp = $temp_func->execute($this->calc_items[($i+1)][0]);//ejecuta la funcion pasando el argumento
-						$i++;// se salta el siguiente grupo (ya usado)
-					}
-					else{
-						$name = $temp_func->get_name();
-						throw new Exception("La función '$name' necesita y admite solo un numero como argumento", 1);
-					}
-				}
-				else{
-					$resp = $temp_func->execute();// ejecuta la funcion
-				}
-				$new_formula_array[] = $resp; // guarda el resultado de la función
-				continue;
-			}
-
-			$new_formula_array[] = $token;
-
-
-
-
-		}
-	}
 
 	PRIVATE function calc_variables(){
 		$operador = [
@@ -588,8 +585,12 @@ trait Calculadora2{
 		return json_encode($this->calc_var);
 	}
 	PUBLIC function add_var($key,$value){
-		$this->calc_var->vacio = false; // TODO quitar esto
-		$this->calc_var->{$key} = $value;
+		if(!isset($this->calc_f->{$key})){
+			$this->calc_var->{$key} = $value;
+		}
+		else{
+			$this->calc_error = "La variable '$key' no puede ser utilizada, es una variable/función del sistema reservada" ;
+		}
 	}
 
 
@@ -712,8 +713,6 @@ class calc_nodo{
 				
 				default:
 					throw new Exception("El operador (*,/,+,-) no es valido en la posicion ($this->orden)", 1);
-					
-					break;
 			}
 		}
 		else if($this->operador instanceof calc_nodo){
@@ -732,8 +731,7 @@ class calc_nodo{
 				
 				default:
 					throw new Exception("El operador ($this->value) no es valido", 1);
-					
-					break;
+				
 			}
 		}
 

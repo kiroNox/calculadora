@@ -14,7 +14,7 @@
 
 		$formula = "253+3+a+b+c+[cinco(-10+20)]-3";
 		$formula = "2+3+(6*3 + 6*8) - 5";
-		$formula = "GALLETAS 2";
+		$formula = "TIEMPO_TRABAJADOR2";
 
 		$cl->add_var("x","5");
 
