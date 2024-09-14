@@ -6,32 +6,36 @@ trait Calculadora2{
 	PRIVATE $calc_var;
 	PRIVATE $calc_f;
 	PRIVATE $calc_formula;
+	PRIVATE $calc_list_formulas;
 	PRIVATE $calc_separadores;
 	PRIVATE $calc_posicion;
 	PRIVATE $calc_items;
 	PRIVATE $counter_loop;
 	PRIVATE $calc_error;
+	PRIVATE $calc_evaluando;
+	PRIVATE $calc_diff_var_formula;
 
 
 
 	PUBLIC function calc_init(){
-		$this->calc_var = new stdClass();
 		$this->calc_f = new stdClass();
-		$this->calc_var->vacio=true; // TODO quitar esto
+		$this->calc_var = new stdClass();
+		$this->calc_evaluando = new stdClass();
+		$this->calc_list_formulas = new stdClass();
 		$this->calc_error = null;
 
-		$this->calc_separadores[] = '\\+';
-		$this->calc_separadores[] = '\\-';
-		$this->calc_separadores[] = '\\/';
-		$this->calc_separadores[] = '\\*';
-		$this->calc_separadores[] = '\\(';
-		$this->calc_separadores[] = '\\)';
-		$this->calc_separadores[] = '\\[';
-		$this->calc_separadores[] = '\\]';
-		$this->calc_separadores[] = '\\{';
-		$this->calc_separadores[] = '\\}';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\+';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\-';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\/';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\*';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\(';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\)';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\[';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\]';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\{';
+		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\}';
 		$this->calc_separadores[] = '[a-zA-Z]+(?:[_]*[a-zA-Z]*)?';
-		$this->calc_separadores[] = '[0-9]+([\\.][0-9]+)?';
+		//$this->calc_separadores[] = '[0-9]+([\\.][0-9]+)?';
 		$this->calc_separadores[] = '__.*__';
 
 		$this->calc_posicion = 0;
@@ -39,7 +43,13 @@ trait Calculadora2{
 
 		$this->calc_status = true;
 
+
+
 		$this->add_calc_system_function();
+
+		$this->update_list_formulas();
+
+
 
 	}
 
@@ -71,30 +81,50 @@ trait Calculadora2{
 			}
 			return $resultado;
 		};
-		$this->set_calc_function("TIEMPO_TRABAJADOR",$fun,false);
+		$descrip = "Calcula el tiempo del trabajador en años";
+		$this->set_calc_function("TIEMPO_TRABAJADOR",$descrip,$fun,false,true);
 
 		$fun = function(){
-			return $this->id_trabajador;
+			return 0;
 		};
-		$this->set_calc_function("GALLETAS",$fun,false);
+		$descrip="galleta XD ";
+		$this->set_calc_function("GALLETAS",$descrip,$fun,false);
 
 		// otras funciones....
 	}
 
+	PRIVATE function calc_f_clean_cache(){
+		foreach ($this->calc_f as $elem) {
+			$elem->cl_cache();
+		}
+	}
 
 
-	PUBLIC function leer_formula($string){
+
+	PUBLIC function leer_formula($formula,$variables=null,$cl_cache=true,$var_formu=false){
 
 		try {
+			if($variables === null){
+				$variables = [];
+			}
 			$this->calc_check_status(); // check constructor
-			$this->set_calc_formula($string); // guardo la formula original
-			$this->calc_separador(); // separo los elementos
-			$this->calc_variables(); // remplazo las variables
-			//$this->calc_items = $this->calc_functions(); // evalua las funciones del sistema
-			$this->calc_items = $this->calc_groups(); // asigno los grupos
+			$this->set_calc_formula($formula); // limpio la formula de los espacios en blanco
+			$formula_array = $this->calc_separador($formula); // separo los elementos
 
-			$r["total"] = $this->resolve_groups();
+
+			$this->calc_variables($formula_array,$variables); // remplazo las variables
+
+			
+			$formula_array = $this->calc_groups($formula_array); // asigno los grupos
+
+
+
+
+
+			$r["resultado"] = "leer_formula";
+			$r["total"] = $this->resolve_groups($formula_array,$formula);
 			$r["formula"] = $this->calc_formula;
+			$r["tipo"] = "normal";
 			//$this->calc_nodes();
 			//$r["total"] = $this->resolve_nodes();
 
@@ -106,11 +136,10 @@ trait Calculadora2{
 			
 			//$r[] = $this->calc_formula;
 
-			if(!$this->calc_var->vacio){
-				$r["variables"] = $this->get_all_var();
-			}
+			$r["variables"] = $this->get_all_var($variables);
 
 			//$r[] = $this->calc_items;
+			$r[] = $formula_array;
 
 		} catch (Exception $e) {
 			if($this->con instanceof PDO){
@@ -120,15 +149,203 @@ trait Calculadora2{
 			}
 			
 			$r['resultado'] = 'error';
-			$r['titulo'] = 'Error';
-			$r["formula"] = $string;
+			$r['titulo'] = "La formula no pudo ser calculada";
+			$r["formula"] = $formula;
+
 
 			if($e->getCode() == 118){
 				$r['mensaje'] =  $e->getMessage();
 			}
 			else{
-				$r['mensaje'] =  "La formula no pudo ser calculada";
-				$r["console"] = $e->getMessage();
+				$r["mensaje"] = $e->getMessage();
+			}
+			$r["calc_error"] = $e->getCode();
+			// 103 = Las agrupaciones no pueden estar vaciás
+			// 118 = La variable/function ... no existe
+
+			if($var_formu!==false){// si no es false significa que estaba evaluando algo y eso seria $var_formu
+				throw new Exception("Error al evaluar '$var_formu' :: ".$e->getMessage(), $e->getCode());
+			}
+
+			//$r["path"] = $e->getTrace();
+			$r["path2"] = $e->getTraceAsString();
+			//$r["lista"] = $this->calc_items;
+		}
+
+		return $r;
+
+	}
+
+	PUBLIC function leer_formula_condicional($condiciones,$formula= null,$variables=null){
+		try {
+			if(is_array($condiciones)){// Significa que es una matriz con los datos (asociativo de los argumentos)
+
+				foreach ($condiciones as $lista) {
+					if(!isset($lista["variables"])) $lista["variables"] = null;
+
+					$leer_formula_condicional = $this->leer_formula_condicional($lista["condiciones"],$lista["formula"],$lista["variables"]);
+					if($leer_formula_condicional["resultado"] == 'error'){
+						throw new Exception($leer_formula_condicional["mensaje"], $leer_formula_condicional["calc_error"]);
+					}
+
+					if($leer_formula_condicional["total"] == NULL){ // no se cumplió ninguna condicional
+						continue;
+					}
+
+					return $leer_formula_condicional;
+				}
+
+				$r = [];
+				$r["resultado"] = "leer_formula_condicional";
+				$r["total"] = null;
+				$r["tipo"] = "condicional";
+				return $r;
+
+			}
+			else if(!isset($formula)){
+				throw new Exception("Debe introducir una formula valida para la condicional '$condiciones' ", 1);
+				
+			}
+
+			$condiciones = preg_replace("/\s*/", "", $condiciones);
+
+			if(preg_match("/[<][>]|[<][=]|[>][=]|[<]|[>]|[=]/", $condiciones)){
+
+				$condiciones_separadas = preg_split("/([\<][\>])|([<][=])|([>][=])|([\<])|([\>])|([\=])/", $condiciones,-1,PREG_SPLIT_DELIM_CAPTURE);
+
+
+
+				$condiciones_separadas = array_filter($condiciones_separadas,"calc_filter_vacio");
+				$condiciones_separadas = array_values($condiciones_separadas);
+
+				if(count($condiciones_separadas) != 3 ){
+					throw new Exception("Error en '$condiciones' solo puede usar los siguientes caracteres de comparación (<, >, =, >=, <=)", 1);
+				}
+
+
+				preg_match("/[\<][\>]|[<][=]|[>][=]|[\<]|[\>]|[\=]/", $condiciones,$igualdad);// obtengo la igualdad
+				
+				$condicion_1 = $this->leer_formula($condiciones_separadas[0]);
+
+				$condicion_2 = $this->leer_formula($condiciones_separadas[2]);
+
+				if($condicion_1["resultado"] == "error"){
+					throw new Exception($condicion_1["mensaje"], $condicion_1["calc_error"]);
+				}
+				
+				if($condicion_2["resultado"] == "error"){
+					throw new Exception($condicion_2["mensaje"], $condicion_2["calc_error"]);
+				}
+
+				$respuesta = false;
+
+				switch ($igualdad[0]) {
+					case '<>':
+						if($condicion_1 != $condicion_2){
+							$respuesta = true;
+						}
+						break;
+					case '=':
+						if($condicion_1 == $condicion_2){
+							$respuesta = true;
+						}
+						break;
+					case '<':
+						if($condicion_1 < $condicion_2){
+							$respuesta = true;
+						}
+						break;
+					case '>':
+						if($condicion_1 > $condicion_2){
+							$respuesta = true;
+						}
+						break;
+					case '>=':
+						if($condicion_1 >= $condicion_2){
+							$respuesta = true;
+						}
+						break;
+					case '<=':
+						if($condicion_1 <= $condicion_2){
+							$respuesta = true;
+						}
+						break;
+					default:
+						throw new Exception("ERROR al recibir el signo de igualdad de la condición", 1);
+				}
+
+				if($respuesta === true){
+					$r = $this->leer_formula($formula,$variables);
+					if($r["resultado"] == 'error'){
+						throw new Exception($r["mensaje"], $r["calc_error"]);
+					}
+					$r["resultado"] = "leer_formula_condicional";
+					$r["tipo"] = "condicional";
+					$r["formula"] = $formula;
+				}
+				else{
+					$r =[];
+					$r["resultado"] = "leer_formula_condicional";
+					$r["total"] = NULL;
+					$r["formula"] = $formula;
+					$r["variables"] = $variables;
+					$r["tipo"] = "condicional";
+
+				}
+
+
+			}
+			else{
+
+				//throw new Exception("Error en la condición '$condiciones' debe tener al menos un signo de comparación (<,>,<>,=)", 1);
+
+				$cond = $this->leer_formula($condiciones);
+
+				if($cond["resultado"] == "leer_formula"){
+					if(($cond["total"] > 0)){
+
+						$r = $this->leer_formula($formula,$variables);
+						if($r["resultado"] == 'error'){
+							throw new Exception($r["mensaje"], $r["calc_error"]);
+						}
+						$r["resultado"] = "leer_formula_condicional";
+						$r["tipo"] = "condicional";
+						$r["formula"] = $formula;
+					}
+					else{
+						$r =[];
+						$r["resultado"] = "leer_formula_condicional";
+						$r["total"] = NULL;
+						$r["formula"] = $formula;
+						$r["variables"] = $variables;
+						$r["tipo"] = "condicional";
+
+					}
+				}
+				else{
+					throw new Exception($cond["mensaje"], $cond["calc_error"]);
+				}
+
+				
+			}
+		
+		} catch (Exception $e) {
+			if($this->con instanceof PDO){
+				if($this->con->inTransaction()){
+					$this->con->rollBack();
+				}
+			}
+			
+			$r['resultado'] = 'error';
+			$r['titulo'] = 'La formula no pudo ser calculada';
+			$r["formula"] = $formula;
+
+
+			if($e->getCode() == 118){
+				$r['mensaje'] =  $e->getMessage();
+			}
+			else{
+				$r["mensaje"] = $e->getMessage();
 				$r["calc_error"] = $e->getCode();
 				// 103 = Las agrupaciones no pueden estar vaciás
 				// 118 = La variable/function ... no existe
@@ -136,27 +353,30 @@ trait Calculadora2{
 
 			//$r["path"] = $e->getTrace();
 			$r["path2"] = $e->getTraceAsString();
-			$r["lista"] = $this->calc_items;
+			//$r["lista"] = $this->calc_items;
 		}
-		return $r;
 
+
+
+
+
+
+
+
+		return $r;
 	}
 
-	PUBLIC function resolve_groups($formula_array = ''){
-		if($formula_array ==''){
-			$formula_array = $this->calc_items;
-		}
-
-
+	PUBLIC function resolve_groups($formula_array,$formula = null){
 
 		for($i=0;$i<count($formula_array);$i++){
-			$token = &$formula_array[$i];
+			$token = $formula_array[$i];
 			if(is_array($token)){
-				$token = $this->resolve_groups($token);
+				$formula_array[$i] = $this->resolve_groups($token);
 			}
 		}
 
-		$this->calc_nodes($formula_array);
+
+		$this->calc_nodes($formula_array,$formula);
 		return $this->resolve_nodes($formula_array);
 
 	}
@@ -166,9 +386,10 @@ trait Calculadora2{
 		if($this->calc_error) throw new Exception($this->calc_error, 1);
 	}
 
-	PRIVATE function calc_separador (){
+	PRIVATE function calc_separador ($string){
 		try {
-			$string = $this->calc_formula;
+
+			//$string = $this->calc_formula;
 
 
 			if($string ==''){
@@ -201,10 +422,10 @@ trait Calculadora2{
 			$separadores = "/($separadores)/";
 
 			$r = preg_split($separadores, $string, -1, PREG_SPLIT_DELIM_CAPTURE);
-			
-			$r = array_filter($r);
 
-			
+
+
+			$r = array_filter($r,"calc_filter_vacio");
 
 			$operador[] = '^[\\+]$';
 			$operador[] = '^[\\-]$';
@@ -251,7 +472,11 @@ trait Calculadora2{
 
 			$r = array_values($r);
 
-			$this->calc_items = $r;
+			//$this->calc_items = $r;
+
+			
+			
+			return $r;
 
 
 
@@ -266,7 +491,9 @@ trait Calculadora2{
 	}
 
 
-	PRIVATE function calc_variables(){
+	PRIVATE function calc_variables(&$formula,$variables){
+
+
 		$operador = [
 			"^[\\+]$",
 			"^[\\-]$",
@@ -278,33 +505,32 @@ trait Calculadora2{
 		];
 		$operador = implode("|", $operador);
 
-		foreach ($this->calc_items as $key => $value) {
-			if(preg_match("/[a-zA-Z]+(?:[_]*[a-zA-Z]*)?/", $this->calc_items[$key] )){
-				if($temp = $this->get_calc_function($this->calc_items[$key],$key)){
-					$this->calc_items[$key] = $temp;
-					continue;
-				}
-
-				else if($temp = $this->get_var($this->calc_items[$key])){ // si es una variable del usuario
+		foreach ($formula as $key => $value) {
+			if(isset($formula[$key]) and preg_match("/[a-zA-Z]+(?:[_]*[a-zA-Z]*)?/", $formula[$key] )){// si encuentra nombres de variables o funciones en la formula
+				if( ($temp = $this->get_calc_function($formula[$key])) !== null){// si es una funcion
 					$temp = floatval(number_format($temp,2,'.',''));
+
+
+
+
 
 					$temp_key = intval($key);
 
-					if (isset($this->calc_items[$temp_key - 1]) and preg_match("/^\+$ | ^\-$|/", $this->calc_items[$temp_key - 1])){
-						$anterior = $this->calc_items[$temp_key - 1];
+					if (isset($formula[$temp_key - 1]) and preg_match("/^\+$ | ^\-$|/", $formula[$temp_key - 1])){
+						$anterior = $formula[$temp_key - 1];
 						// si el anterior al actual existe y si es un signo de "+" o "-"
 
 						
 
 
-						if ((isset($this->calc_items[$temp_key - 2]) and preg_match("/$operador/", $this->calc_items[$temp_key - 2])) or ($temp_key - 2) < 0 ){
+						if ((isset($formula[$temp_key - 2]) and preg_match("/$operador/", $formula[$temp_key - 2])) or ($temp_key - 2) < 0 ){
 							if(($temp < 0 or $temp > 0 ) and $anterior == '-'){
 
 								$temp = -1 * $temp;
 
-								$this->calc_items[$key] = $temp;
-								unset($this->calc_items[$temp_key - 1]);
-								$this->calc_items = array_values($this->calc_items);
+								$formula[$key] = $temp;
+								unset($formula[$temp_key - 1]);
+								$formula = array_values($formula);
 								continue;
 							}
 						}
@@ -312,22 +538,175 @@ trait Calculadora2{
 
 
 
-
-
-
-					$this->calc_items[$key] = $temp;
+					$formula[$key] = $temp;
 					continue;
 				}
+
+				else if(($temp = $this->get_var($formula[$key],$variables) ) !== false){ // si es una variable del usuario
+
+						
+						
+							$temp = floatval(number_format($temp,2,'.',''));
+
+							$temp_key = intval($key);
+
+							if (isset($formula[$temp_key - 1]) and preg_match("/^\+$ | ^\-$|/", $formula[$temp_key - 1])){
+								$anterior = $formula[$temp_key - 1];
+								// si el anterior al actual existe y si es un signo de "+" o "-"
+
+								
+
+
+								if ((isset($formula[$temp_key - 2]) and preg_match("/$operador/", $formula[$temp_key - 2])) or ($temp_key - 2) < 0 ){
+									if(($temp < 0 or $temp > 0 ) and $anterior == '-'){
+
+										$temp = -1 * $temp;
+
+										$formula[$key] = $temp;
+										unset($formula[$temp_key - 1]);
+										$formula = array_values($formula);
+										continue;
+									}
+								}
+							}
+
+
+					$formula[$key] = $temp;
+					continue;
+				}
+				else if(isset($this->calc_list_formulas->{$value})){// si es una formula almacenada con un nombre
+
+
+					if(isset($this->calc_evaluando->{$value})){
+						throw new Exception("Se esta pidiendo evaluar la formula '$value' en ciclo infinito revise la formula", 1);
+					}
+					else{
+						$this->calc_evaluando->{$value} = 1;
+					}
+
+
+
+
+					$name_form = $this->calc_list_formulas->{$value}["name"];
+					$formula_form = $this->calc_list_formulas->{$value}["formula"];
+
+					if(!is_array($formula_form)){// si no es una lista de formulas con condicionales
+						$variables_form = $this->calc_list_formulas->{$value}["variables"];
+
+						if(isset( $this->calc_list_formulas->{$value}["condiciones"] )){
+
+							$condiciones = $this->calc_list_formulas->{$value}["condiciones"];
+
+							$form_resp = $this->leer_formula_condicional($condiciones, $formula_form, $variables_form);
+
+						}
+						else{
+							$form_resp = $this->leer_formula($formula_form, $variables_form, false);
+						}
+
+						if($form_resp["resultado"] != "leer_formula" and $form_resp["resultado"] != "leer_formula_condicional" ){
+							throw new Exception($form_resp["mensaje"], $form_resp["calc_error"]);
+						}
+
+						$formula[$key] = $form_resp["total"];
+					}
+					else{
+						$form_resp = $this->leer_formula_condicional($formula_form);
+						$formula[$key] = $form_resp["total"];
+					}
+
+					unset($this->calc_evaluando->{$value});
+				}
 				else{
-					
-					throw new Exception("La variable/function '".$this->calc_items[$key]."' no existe", 118);
+
+					throw new Exception("La variable/function '".$formula[$key]."' no existe", 118);
 					
 				}
 			}
 		}
 	}
 
-	PRIVATE function calc_groups($formula_array = ''){
+	PUBLIC function add_list_formulas($name,$formula,$descrip,$variables=null,$condiciones = null,$id_formula=null,$replace=false){
+
+		if(!isset($this->calc_list_formulas->{$name}) or ( isset($this->calc_list_formulas->{$name}) and $replace = true ) ){
+			if(!isset($this->calc_f->{$name})){// si la funcion no existe
+				if(!isset($variables)){
+					$variables = [];
+				}
+				$this->calc_list_formulas->{$name}["formula"] = $formula;
+				$this->calc_list_formulas->{$name}["variables"] = $variables;
+				$this->calc_list_formulas->{$name}["name"] = $name;
+				$this->calc_list_formulas->{$name}["descrip"] = $descrip;
+				$this->calc_list_formulas->{$name}["condiciones"] = $condiciones;
+				$this->calc_list_formulas->{$name}["id_formula"] = $id_formula;
+			}
+			else{
+				$this->calc_error = "La formula con el nombre '$name' esta tomando una palabra reservada del sistema necesita ser modificada antes de continuar";
+			}
+		}
+		else {
+			$this->calc_error = "La formula con el nombre '$name' esta duplicada y debe ser modificada antes de continuar";
+		}
+	}
+
+	PUBLIC function update_list_formulas(){
+		try {
+
+
+			$this->validar_conexion($this->con);
+
+			$consulta = $this->con->prepare("SELECT f.nombre, f.id_formula, f.descripcion, df.formula, df.variables, df.condicional FROM detalles_formulas AS df LEFT JOIN formulas AS f ON f.id_formula = df.id_formula WHERE 1;");
+			$consulta->execute();
+			$resp = $consulta->fetchall(PDO::FETCH_GROUP);
+
+			if($resp){
+
+
+				$this->calc_list_formulas = new stdClass();
+				foreach ($resp as $key => $lista) {
+					if(count($lista)>1){
+						$formula_array = [];
+						foreach ($lista as $elem) {
+							$temp_array = [];
+							$temp_array["condiciones"] = $elem["condicional"];
+							$temp_array["formula"] = $elem["formula"];
+							$elem["variables"] = ($elem["variables"] !== null)?json_decode($elem["variables"],true):NULL;
+							$temp_array["variables"] = $elem["variables"];
+							$temp_array["id_formula"] = $elem["id_formula"];
+							$formula_array[] = $temp_array;
+
+
+						}
+						$descripcion = $lista[0]["descripcion"];
+						$this->add_list_formulas($key, $formula_array, $descripcion);
+					}
+					else {
+						$lista[0]["variables"] = ($lista[0]["variables"] !== NULL)?json_decode($lista[0]["variables"],true):NULL;
+						$this->add_list_formulas($key, $lista[0]["formula"], $lista[0]["descripcion"], $lista[0]["variables"], $lista[0]["condicional"], $lista[0]["id_formula"]);
+					}
+				}
+
+
+			}
+		} catch (Exception $e) {
+
+			$this->calc_error = "Error al actualizar la lista de formulas almacenadas";
+		}
+		finally{
+			//$this->con = null;
+			$consulta = null;
+		}
+	}
+
+	PRIVATE function calc_groups($formula_array){
+
+
+
+
+
+
+
+
 
 
 
@@ -340,10 +719,6 @@ trait Calculadora2{
 		}
 
 		$new_formula_array = [];
-
-		if($formula_array == ''){
-			$formula_array = $this->calc_items;
-		}
 
 		$end = count($formula_array);
 		$i = 0;
@@ -358,14 +733,18 @@ trait Calculadora2{
 
 
 
-			$token = $formula_array[$i];
+			$token_switch = $token = $formula_array[$i];
+
+			$token_switch = strval($token_switch);
+			
+
+
 
 			
 
 			if($open[0] === false ){ // si todavia no ha encontrado un grupo
-				switch ($token) {
+				switch ($token_switch) {
 					case '(':
-
 						$open[0] = '('; // abre el grupo
 						$open[1] = $i; // guarda donde abrio
 						$close[0] = ')'; // guarda como cierra
@@ -420,8 +799,9 @@ trait Calculadora2{
 
 					$group_found = $this->calc_groups($group_found); // reviso si hay otro grupo entre el grupo abierto antes
 
+
 					if($open[1] == 0 and $close[1] == ($end - 1)){ // si el grupo coincide con todo el array
-						array_merge($new_formula_array,$group_found);
+						$new_formula_array =  array_merge($new_formula_array,$group_found);
 					}
 					else{
 						$new_formula_array[] = $group_found;
@@ -432,13 +812,32 @@ trait Calculadora2{
 
 			//echo "<pre>$i < $end and $open[0]</pre>";
 
-			if((!($i<$end)) and $open[0] !== false){
-				throw new Exception("Se encontro un`'".$open[0]."' sin cerrar", 1);
-			}
 
 
 		}
+		if($open[0] !== false){
+			throw new Exception("Se encontro un`'".$open[0]."' sin cerrar", 1);
+		}
+
 		return $new_formula_array;
+	}
+
+
+	PUBLIC function get_calc_reserved_words(){
+		$lista = [];
+		foreach ($this->calc_f as $key => $value) {
+			$lista[] = ["name" => $key,"descrip"=> $value->descrip];
+		}
+
+		foreach ($this->calc_list_formulas as $key => $value) {
+			$temp = ["name" => $key,"descrip" => $value["descrip"]];
+
+			if(isset($value["id_formula"])){
+				$temp["id"] = $value["id_formula"];
+			}
+			$lista[] = $temp;
+		 }
+		return $lista;
 	}
 
 
@@ -450,23 +849,22 @@ trait Calculadora2{
 
 
 
-	PUBLIC function calc_nodes(&$formula_array = '' ){ // convierte todos los numero y los operadores en nodos
-		$replace_array = false;
-
-		if($formula_array == ''){
-			unset($formula_array);
-			$formula_array = $this->calc_items;
-			$replace_array = true;
-		}
+	PUBLIC function calc_nodes(&$formula_array = '' ,$formula=null){ // convierte todos los numero y los operadores en nodos
 		$anterior = false;
+
+
 		for($i=0;$i<count($formula_array);$i++){
 			unset($token);
 			$token = &$formula_array[$i];
+
+
+
 
 			if(!$anterior){
 				$anterior=true;
 				$valor = $token;
 				$token = new calc_nodo($token,true,$i);
+				$token->formula = $formula;
 				$token->set_value($valor);
 
 				if(count($formula_array)==1){
@@ -483,6 +881,7 @@ trait Calculadora2{
 					$valor = $token;
 					$token_anterior = &$formula_array[($i-1)];
 					$token = new calc_nodo($token_anterior,$token,null,$i);
+					$token->formula = $formula;
 					$token_anterior->add_operador($token);
 					$token->set_value($valor);
 
@@ -492,6 +891,7 @@ trait Calculadora2{
 				else{
 					$valor = $token;
 					$token = new calc_nodo($token,true,$i);
+					$token->formula = $formula;
 					$token->set_value($valor);
 					$formula_array[($i-1)]->add_right($token);
 					$token->set_nodo_anterior($formula_array[($i-1)]);
@@ -500,12 +900,6 @@ trait Calculadora2{
 
 			}
 		}
-
-		if($replace_array){
-			$this->calc_items = $formula_array;
-		}
-
-
 	}
 
 	PUBLIC function resolve_nodes(&$formula_array = ''){// llama a que los nodos se resuelvan
@@ -527,38 +921,13 @@ trait Calculadora2{
 
 
 
-	PUBLIC function set_calc_function($name,$func,$arguments){//nombre de la funcion, la funcion misma, si tendra argumentos de la funcion si o no BOOL
-		$this->calc_f->{$name} = new calc_functions($name,$func,$arguments);
+	PUBLIC function set_calc_function($name,$descrip,$func,$arguments,$cache=false){//nombre de la funcion, la funcion misma, si tendra argumentos de la funcion si o no BOOL(no se usa),y si guarda el resultado en cache
+		$this->calc_f->{$name} = new calc_functions($name,$descrip,$func,$arguments,$cache);
 	}
 
-	PUBLIC function get_calc_function($name,$key_item){
-
-
+	PUBLIC function get_calc_function($name){
 		if(isset($this->calc_f->{$name})){
 			return $this->calc_f->{$name}->execute();
-
-
-			// if($this->calc_f->{$name}['arguments']){// si los argumentos estan habilitados bool true
-			// 	if($arguments !== null){ // y los argumentos pasados no son nulos 
-			// 		$resp = $this->calc_f->{$name}["func"]($arguments);//ejecuta la funcion con los argumentos
-			// 		if(!is_numeric($resp)){
-			// 			throw new Exception("La respuesta de la funcion '".$this->calc_f->{$name}["name"]."' debe ser un numero", 1);
-						
-			// 		}
-			// 	}
-			// 	else{
-			// 		throw new Exception("Argumentos esperados en la la funcion '".$this->calc_f->{$name}["name"]."'", 1);
-			// 	}
-			// }
-			// else{
-
-			// 	$resp = $this->calc_f->{$name}["func"]();//ejecuta la funcion sin los argumentos
-			// 	if(!is_numeric($resp)){
-			// 		throw new Exception("La respuesta de la funcion '".$this->calc_f->{$name}["name"]."' debe ser un numero", 1);
-					
-			// 	}
-			// }
-
 		}
 		else{
 			return null;
@@ -569,32 +938,351 @@ trait Calculadora2{
 
 
 
-	PUBLIC function set_calc_formula($value){
-		$this->calc_formula = preg_replace("/\s+/", "", $value);
+	PUBLIC function set_calc_formula(&$value){
+		$value = preg_replace("/\s+/", "", $value);
 	}
 
-	PUBLIC function get_var($key){
-		if( isset($this->calc_var->{$key}) ){
-			return $this->calc_var->{$key};
+	PUBLIC function get_var($key,$lista){
+		if($lista === null){
+			$lista = [];
+		}
+		if(is_array($lista)){
+			if(isset($lista[$key])){
+				$resp = $lista[$key];
+
+
+				if($resp == '__!__'){
+					throw new Exception("La variable '$key' no puede ser utilizada al calcular la variable '$key' ", 1);
+				}
+
+				$operadores_formula_var = implode("|", $this->calc_diff_var_formula);
+
+
+
+				if(preg_match("/$operadores_formula_var/", $resp)){// si tiene operadores es una formula
+
+					$temp_variables=$lista;
+
+					$temp_variables[$key] = "__!__";
+
+					$resp = $this->leer_formula($resp,$temp_variables,false,$key);
+
+					$resp = $resp["total"];
+
+				}
+
+
+
+
+
+
+				else if(preg_match("/[a-zA-Z]+(?:[_]*[a-zA-Z]*)?/", $resp )){// si tiene letras es una variable o función
+					$temp = $resp;
+
+					if(isset($lista[$temp])){
+						$resp = $this->get_var($temp,$lista);
+					}
+					else if( ($func_resp = $this->get_calc_function($temp) ) !== null){
+						$resp = $func_resp;
+					}
+					else{
+						throw new Exception("La variable/function '$temp' no existe", 118);
+					}
+				}
+				return $resp;
+			}
+			else{
+				return false;
+			}
 		}
 		else{
-			return false;
+			show_varx($lista);
+			throw new Exception("la lista de variables debe ser un arreglo", 1);
+			
 		}
+
+
+
+
+
+		// if( isset($this->calc_var->{$key}) ){
+		// 	$resp = $this->calc_var->{$key};
+		// 	if(preg_match("/[a-zA-Z]+(?:[_]*[a-zA-Z]*)?/", $resp )){
+		// 		$temp = $this->calc_var->{$key};
+
+		// 		if(isset($this->calc_var->{$temp})){
+		// 			$resp = $this->get_var($temp);
+		// 		}
+		// 		else if($func_resp = $this->get_calc_function($temp)){
+		// 			$resp = $func_resp;
+		// 		}
+		// 		else{
+		// 			throw new Exception("La variable/function '$temp' no existe", 118);
+		// 		}
+
+
+
+
+		// 	}
+
+		// 	return $resp;
+		// }
+		// else{
+		// 	return false;
+		// }
 	}
-	PUBLIC function get_all_var(){
-		return json_encode($this->calc_var);
-	}
-	PUBLIC function add_var($key,$value){
-		if(!isset($this->calc_f->{$key})){
-			$this->calc_var->{$key} = $value;
+	PUBLIC function get_all_var($lista){
+		if(is_array($lista)){
+			return json_encode($lista);
 		}
 		else{
-			$this->calc_error = "La variable '$key' no puede ser utilizada, es una variable/función del sistema reservada" ;
+			return null;
 		}
+		// $found = false;
+		// foreach ($this->calc_var as $elem) {
+		// 	$found = true;
+		// 	break;
+		// }
+		// if($found){
+		// 	return json_encode($this->calc_var);
+		// }
+		// else{
+		// 	return null;
+		// }
+	}
+	PUBLIC function add_var($key,$value,&$lista=null){
+		if(!isset($this->calc_f->{$key}) and !isset($this->calc_list_formulas->{$key})){
+			if($lista===null){
+				$lista = [];
+			}
+
+			$lista[$key] = $value;
+			return $lista;
+		}
+		else{
+			$this->calc_error = "El nombre de la variable '$key' no puede ser utilizada, es una variable/función del sistema reservada" ;
+			return [];
+		}
+	}
+
+
+	PUBLIC function get_lista_trabajadores(){
+		try {
+			$this->validar_conexion($this->con);
+			$this->con->beginTransaction();
+			
+			$consulta = $this->con->prepare("SELECT id_trabajador as id, CONCAT(nombre,' ',apellido) as nombre FROM trabajadores WHERE estado_actividad = true;");
+			$consulta->execute();
+			
+			$r['resultado'] = 'get_lista_trabajadores';
+			$r['mensaje'] =  $consulta->fetchall(PDO::FETCH_ASSOC);
+		
+		} catch (Exception $e) {
+			if($this->con instanceof PDO){
+				if($this->con->inTransaction()){
+					$this->con->rollBack();
+				}
+			}
+		
+			$r['resultado'] = 'error';
+			$r['titulo'] = 'Error';
+			$r['mensaje'] =  $e->getMessage();
+			//$r['mensaje'] =  $e->getMessage().": LINE : ".$e->getLine();
+		}
+		finally{
+			//$this->con = null;
+			$consulta = null;
+		}
+		return $r;
+	}
+
+	PUBLIC function calc_guardar_formula($formula, $nombre, $descripcion, $variables=NULL,$condicional=NULL,$orden=0,$commit_on_end=false, $lanzar_error=false){
+		$before_transaction = true;
+		try {
+			$this->validar_conexion($this->con);
+			if(!$this->con->inTransaction()){
+				$this->con->beginTransaction();
+				$before_transaction = false;
+			}
+
+
+			if(isset($this->get_calc_reserved_words()[$nombre])){
+				throw new Exception("El nombre de la formulas '$nombre' ya existe o es una palabra reservada del sistema", 1);
+			}
+
+
+			$consulta = $this->con->prepare("SELECT 1 FROM formulas WHERE nombre = ?;"); // reviso el nombre en la bd
+			$consulta->execute([$nombre]);
+
+			if($consulta->fetch()){
+				throw new Exception("Error Processing Request", 23000);
+			}
+			$consulta = null;
+
+
+
+			$consulta = $this->con->prepare("INSERT INTO formulas  (nombre, descripcion) VALUES (?,?)");
+			$consulta->execute([$nombre, $descripcion]);
+
+			$last = $this->con->lastInsertId();
+
+			$consulta = null;
+
+			$consulta = $this->con->prepare("INSERT INTO detalles_formulas (id_formula, formula, variables, condicional, orden) VALUES (:id_formula, :formula, :variables, :condicional, :orden) ");
+			$consulta->bindValue(":id_formula",$last);
+			$consulta->bindValue(":formula",$formula);
+			$consulta->bindValue(":variables",$variables);
+			$consulta->bindValue(":condicional",$condicional);
+			$consulta->bindValue(":orden",$orden);
+
+			$consulta->execute();
+
+
+
+
+
+
+			// code
+			
+			$r['resultado'] = 'calc_guardar_formula';
+			$r['formula'] =  $last;
+			if($before_transaction === false or $commit_on_end === true){
+				if($this->con->inTransaction()){
+					$this->con->commit(); //TODO poner esto
+				}
+			}
+		
+		} catch (Exception $e) {
+			if($before_transaction !== true){
+				if($this->con instanceof PDO){
+					if($this->con->inTransaction()){
+						$this->con->rollBack();
+					}
+				}
+			}
+
+			$r['resultado'] = 'error';
+			$r['titulo'] = 'Error';
+			$r['mensaje'] =  $e->getMessage();
+			$r['code'] = $e->getCode();
+
+			if($e->getCode()==23000){
+				$r['mensaje'] = "La formula con el nombre '$nombre' ya existe";
+				if($lanzar_error){
+					throw new Exception("La formula con el nombre '$nombre' ya existe", 1);
+					
+				}
+			}
+
+			if($lanzar_error){
+				throw $e;
+			}
+
+		
+		}
+		finally{
+			$consulta = null;
+		}
+		return $r;
+	}
+
+	PUBLIC function calc_guardar_formula_lista($formulas, $nombre,$descripcion,$lanzar_error = false,$commit_on_end=true){
+		$before_transaction = true;
+		try {
+		 	$this->validar_conexion($this->con);
+			if(!$this->con->inTransaction()){
+				$this->con->beginTransaction();
+				$before_transaction = false;
+			}
+			if(!is_array($formulas)){
+				throw new Exception("La lista de formulas debe de ser un array", 1);
+			}
+			if(isset($this->get_calc_reserved_words()[$nombre])){
+				throw new Exception("El nombre de la formulas '$nombre' ya existe o es una palabra reservada del sistema", 1);
+			}
+
+			$consulta = $this->con->prepare("SELECT 1 FROM formulas WHERE nombre = ?;"); // reviso el nombre en la bd
+			$consulta->execute([$nombre]);
+
+			if($consulta->fetch()){
+				throw new Exception("La formula con el nombre '$nombre' ya existe", 1);
+			}
+			$consulta = null;
+
+			$consulta = $this->con->prepare("INSERT INTO formulas  (nombre, descripcion) VALUES (?,?)");
+			$consulta->execute([$nombre, $descripcion]);
+
+			$last = $this->con->lastInsertId();
+
+			$query = "INSERT INTO detalles_formulas (id_formula, formula, variables, condicional, orden) VALUES ";
+			$values_holder = array_fill(0, count($formulas), "(?,?,?,?,?)");
+			$values_holder = implode(',', $values_holder);
+
+			$query.=$values_holder;
+
+			$consulta = $this->con->prepare($query);
+			$i=1;
+			foreach ($formulas as $elem) {
+				$consulta->bindValue($i++,$last);
+				$consulta->bindValue($i++,$elem["formula"]);
+				if(isset($elem["variables"])){
+					$elem["variables"] = json_encode($elem["variables"]);
+				}
+				else{
+					$elem["variables"] = NULL;	
+				}
+				$consulta->bindValue($i++,$elem["variables"]);
+				$consulta->bindValue($i++,$elem["condiciones"]);
+				$consulta->bindValue($i++,$elem["orden"]);
+			}
+
+			$consulta->execute();
+
+		 	// code
+		 	
+		 	$r['resultado'] = 'calc_guardar_formula_lista';
+		 	$r['titulo'] = 'Éxito';
+		 	$r['mensaje'] =  "";
+		 	//$this->con->commit();
+
+		 	if($before_transaction === false or $commit_on_end === true){
+		 		if($this->con->inTransaction()){
+		 			$this->con->commit(); //TODO poner esto
+		 		}
+		 	}
+		 
+		 } catch (Exception $e) {
+		 	if($lanzar_error===false){
+		 		if($before_transaction === false or $commit_on_end === true){
+				 	if($this->con instanceof PDO){
+				 		if($this->con->inTransaction()){
+				 			$this->con->rollBack();
+				 		}
+				 	}
+		 		}
+		 	}
+		 	else{
+		 		$consulta = null;
+		 		throw new $e;
+		 	}
+		 
+		 	$r['resultado'] = 'error';
+		 	$r['titulo'] = 'Error';
+		 	$r['mensaje'] =  $e->getMessage();
+		 	$r["path"] = $e->getTraceAsString();
+		 	//$r['mensaje'] =  $e->getMessage().": LINE : ".$e->getLine();
+		 }
+		 finally{
+		 	//$this->con = null;
+		 	$consulta = null;
+		 }
+		 return $r; 
 	}
 
 
 }
+
+
 
 /**
  * 
@@ -604,6 +1292,7 @@ trait Calculadora2{
 class calc_nodo{
 	PRIVATE $left,$right,$operador,$leaft,$orden,$resolved,$value,$nodo_anterior,$total;
 	PRIVATE $unique;
+	PUBLIC $formula;
 	PUBLIC function __construct($left,$operador,$right=null,$orden=null)
 	{
 
@@ -673,6 +1362,7 @@ class calc_nodo{
 			$numeros_decimales = 2;
 
 
+
 			switch ($this->value) {
 				case '*':
 					$left = ($this->left->resolved)?$this->left->total:$this->left->value;
@@ -687,7 +1377,7 @@ class calc_nodo{
 					$left = ($this->left->resolved)?$this->left->total:$this->left->value;
 					$right = ($this->right->resolved)?$this->right->total:$this->right->value;
 					if($right == 0){
-						throw new Exception("No se puede dividir entre cero en la posicion ($this->orden)", 1);
+						throw new Exception("No se puede dividir entre cero en la posicion (".($this->orden + 1).") de la formula '$this->formula'", 1);
 					}
 					$total = floatval(number_format($left, $numeros_decimales, '.', '')) / floatval(number_format($right,$numeros_decimales,'.',''));
 					$this->set_total($total);
@@ -728,17 +1418,18 @@ class calc_nodo{
 				case '/':
 					$this->right->resolver($control);
 					break;
-				
+				case ')':
+				case ']':
+				case '}':
+					throw new Exception("hay un '$this->value' de cierre sin una apertura del mismo", 1);
 				default:
-					throw new Exception("El operador ($this->value) no es valido", 1);
+					throw new Exception("El operador '$this->value' no es valido", 1);
 				
 			}
 		}
 
-		if($this->is_leaft() and $this->resolved != true and $this->left==null and $this->right==null and $this->operador == null){
 
-
-
+		if($this->is_leaft() and $this->resolved !== true and $this->left===null and $this->right===null and $this->operador === null){
 
 			$temp = ($this->is_leaft())?"true":"false";
 			throw new Exception("Ocurrio un error con el nodo $this->orden is_leaft =  $temp valor = $this->value", 1);
@@ -758,32 +1449,32 @@ class calc_nodo{
 		return ($this->resolved)?"RESUELTO":"NO RESUELTO";
 	}
 
-	PUBLIC function mostrar_entorno(){	
-		$lista=[];
+	// PUBLIC function mostrar_entorno(){	
+	// 	$lista=[];
 
-		$lista["yo"] = $this->value;
-		$lista["hoja"] = $this->is_leaft();
+	// 	$lista["yo"] = $this->value;
+	// 	$lista["hoja"] = $this->is_leaft();
 
-		$lista["left"] = (isset($this->left->value))?$this->left->value:NULL;
-		$lista["right"] = (isset($this->right->value))?$this->right->value:NULL;
-		$lista["operador"] = (isset($this->operador->value))?$this->operador->value:NULL;
+	// 	$lista["left"] = (isset($this->left->value))?$this->left->value:NULL;
+	// 	$lista["right"] = (isset($this->right->value))?$this->right->value:NULL;
+	// 	$lista["operador"] = (isset($this->operador->value))?$this->operador->value:NULL;
 
 
-		ob_start();
+	// 	ob_start();
 		
-		echo "<pre>\n entorno Nodo ($this->orden)\n\n";
-		var_dump($lista);
-		echo "</pre>";
+	// 	echo "<pre>\n entorno Nodo ($this->orden)\n\n";
+	// 	var_dump($lista);
+	// 	echo "</pre>";
 		
-		$valor = ob_get_clean();
+	// 	$valor = ob_get_clean();
 
-		//$valor = preg_replace("/\n+(?=string|float)/", "   ", $valor);
-		$valor = preg_replace("/=>\n+/", "=>   ", $valor);
-		$valor = preg_replace("/(string\(\d+\))\s+\"(.*)\"/", "$2   $1", $valor);
-		$valor = preg_replace("/(float\((\d+)\))/", "$2   $1", $valor);
-		echo $valor;;
+	// 	//$valor = preg_replace("/\n+(?=string|float)/", "   ", $valor);
+	// 	$valor = preg_replace("/=>\n+/", "=>   ", $valor);
+	// 	$valor = preg_replace("/(string\(\d+\))\s+\"(.*)\"/", "$2   $1", $valor);
+	// 	$valor = preg_replace("/(float\((\d+)\))/", "$2   $1", $valor);
+	// 	echo $valor;;
 
-	}
+	// }
 
 	PUBLIC function set_nodo_anterior($nodo){
 		if($nodo instanceof calc_nodo){
@@ -800,7 +1491,6 @@ class calc_nodo{
 
 	PUBLIC function set_total($total,$modificados=false){
 
-		echo "<pre>\nModifico el total del nodo ($this->orden)\n</pre>";
 
 		if($modificados===false){
 			$modificados = new stdClass();
@@ -847,22 +1537,28 @@ class calc_nodo{
 
 }
 
-
-/**
- * 
- */
 class calc_functions
 {
-	PRIVATE $name, $func, $arguments;
-	function __construct($name,$func,$arguments=false)
+	PRIVATE $name, $func, $arguments, $cache, $control_cache;
+	PUBLIC $descrip;
+	function __construct($name,$descrip,$func,$arguments=false,$control_cache=false)
 	{
 		$this->name = $name;
 		$this->func = $func;
 		$this->arguments = $arguments;
+		$this->cache = null;
+		$this->control_cache=$control_cache;
+		$this->descrip = $descrip;
 	}
 
 	PUBLIC function execute($arguments=null){
-		if($this->arguments){
+
+		if($this->control_cache===true and isset($this->cache)){
+			$resp = $this->cache;
+		}
+		else{
+
+			if($this->arguments){
 			if(count($arguments)>0){
 				foreach ($arguments as $elem) {
 					if(!is_numeric($elem)){
@@ -874,20 +1570,21 @@ class calc_functions
 			}
 			else{
 				throw new Exception("Argumentos esperados en la la función '$this->name'", 1);
+				}
+			}
+			else{
+				$f_temp = $this->func;
+				$resp = $f_temp();
+			}
+
+			if(!is_numeric($resp)){
+				throw new Exception("La respuesta de la funcion '$this->name' debe ser un numero", 1);
+			}
+			if($this->control_cache===true){
+				$this->cache = $resp;
 			}
 		}
-		else{
-			$f_temp = $this->func;
-			$resp = $f_temp();
-		}
-
-		if(!is_numeric($resp)){
-			throw new Exception("La respuesta de la funcion '$this->name' debe ser un numero", 1);
-			
-			
-		}
 		return $resp;
-
 	}
 	PUBLIC function has_arguments(){
 		if($this->arguments){
@@ -900,25 +1597,46 @@ class calc_functions
 	PUBLIC function get_name(){
 		return $this->name;
 	}
+
+	PUBLIC function cl_cache(){
+		$this->cache=null;
+	}
 }
 
 
 
-
-
-
-
-function show_varx($var,$frase = "function"){ // TODO quitar estos
+function show_varx($var,$ret = true,$frase = ""){ // TODO quitar estos
 	ob_start();
 	
-	echo "<pre>\n\n";
+	echo "<pre>\n";
 	var_dump($var);
-	echo "\n||||$frase||||\n </pre>";
+	if($frase!=''){
+		echo "\n$frase\n";
+	}
+	echo "</pre>";
 	
 	$valor = ob_get_clean();
 	
-	
-	echo $valor;
+	$r["resultado"] = "console";
+	$r["mensaje"] = $valor;
+
+	if($ret==true){
+		echo json_encode($r);
+		exit;
+	}
+	else{
+		echo $valor; exit;
+	}
+}
+
+
+function calc_filter_vacio($string){
+	if(!preg_match("/^\s*$/", $string)){
+		return true;
+	}
+	else{
+		return false;
+	}
 }
 
  ?>
