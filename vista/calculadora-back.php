@@ -12,25 +12,146 @@
 	<div class="container border-info border pt-2">
 
 
-		<div class="d-flex justify-content-between align-items-center">
-			<div class="d-flex justify-content-start align-items-center">
-				<input type="checkbox" class="check-button" id="lista_condicionales">
-				<label for="lista_condicionales" class="check-button"></label>
-				<label for="lista_condicionales" class="cursor-pointer no-select mb-0 ml-2">Lista de condiciones</label>
+
+		<form action="" method="POST" onsubmit="return false" id="calc_formulario_conjunto">
+
+			<div id="calculadora_formulario_content">
+				<style>
+					.lista-variables{
+						max-height: 0;
+						overflow: hidden;
+						transition: .6s max-height;
+					}
+					.lista-variables.open{
+						max-height: 500px;
+						overflow: auto;
+					}
+					div[id^=calc_lista-condicion-]{
+						border-bottom: 1px solid var(--info);
+						padding-bottom: 1rem;
+						margin-bottom: 1rem;
+					}
+				</style>
+
+				<div class="d-flex justify-content-between align-items-center">
+					<div class="d-flex justify-content-start align-items-center">
+						<input type="checkbox" class="check-button" id="lista_condicionales">
+						<label for="lista_condicionales" class="check-button"></label>
+						<label for="lista_condicionales" class="cursor-pointer no-select mb-0 ml-2">Lista de condiciones</label>
+					</div>
+
+					<div>
+						<button class="btn btn-info" id="ver_palabras_reservadas" type="button">Ver palabras reservadas</button>
+					</div>
+
+				</div>
+				<div class="container text-center my-3">
+					<select class="form-control" name="trabajador_prueba" id="trabajador_prueba-1">
+						<option value="">- Seleccione un trabajador de pruebas - </option>
+					</select>
+				</div>
+
+				<div id="formulario_calc_normal">
+
+					<div class="d-flex justify-content-start align-items-center">
+						<input type="checkbox" class="check-button" id="calc_condicional_check" name="calc_condicional_check" data-span="invalid-span-calc_condicional_check">
+						<label for="calc_condicional_check" class="check-button"></label>
+						<label class="cursor-pointer no-select mb-0 ml-2" for="calc_condicional_check">Condicional</label>
+					</div>
+
+					<br>
+					<div class="d-none" id="condicional-container">
+						<label for="calc_condicional">Condición</label>
+						<input required disabled="true" type="text" class="form-control" id="calc_condicional" name="calc_condicional" data-span="invalid-span-calc_condicional">
+						<span id="invalid-span-calc_condicional" class="invalid-span text-danger"></span>
+					</div>
+					<div>
+						<label for="calc_formula_input">Formula</label>
+						<input required type="text" class="form-control" id="calc_formula_input" name="calc_formula_input" data-span="invalid-span-calc_formula_input" data-variables_container="list_calc_variables">
+						<span id="invalid-span-calc_formula_input" class="invalid-span text-danger"></span>
+					</div>
+
+					<div class="container lista-variables my-3">
+						<h4>Variables</h4>
+						<div id="list_calc_variables"></div>
+					</div>
+					
+				</div>
+
+
+				<!-- lista de condicionales -->
+
+
+				<div id="formulario_calc_lista_condicionales" class="d-none">
+
+					<div class="container" id="container_condicionales">
+						<!-- <div id="calc_lista-condicion-1">
+							<label for="calc_condicional">Condición - 1</label>
+							<input required type="text" class="form-control" id="calc_condicional-condicion-1" name="calc_condicional-condicion-1" data-span="invalid-span-calc_condicional-condicion-1">
+							<span id="invalid-span-calc_condicional-condicion-1" class="invalid-span text-danger"></span>
+
+							<label for="calc_formula_input">Formula - 1</label>
+							<input required type="text" class="form-control" id="calc_formula_input-condicion-1" name="calc_formula_input-condicion-1" data-span="invalid-span-calc_formula_input-condicion-1">
+							<span id="invalid-span-calc_formula_input-condicion-1" class="invalid-span text-danger"></span>
+
+							<div class="container lista-variables">
+								<h4>Formula - 1 - Variables</h4>
+								<div id="list_calc_variables-condicion-1"></div>
+							</div>
+						</div> -->
+					</div>
+
+					<div class="text-right">
+						<button type="button" class="btn btn-info" title="Añadir Condición" onclick="add_lista_condicional()">+</button>
+						<button type="button" class="btn btn-info" title="Eliminar Condición" onclick="remove_lista_condicional()">-</button>
+					</div>
+
+
+					
+				</div>
+
+				<!-- lista de condicionales -->
+
+
+				<div>
+					<label for="calc_formula_nombre">Nombre de formula</label>
+					<input type="text" class="form-control" id="calc_formula_nombre" name="calc_formula_nombre" data-span="invalid-span-calc_formula_nombre">
+					<span id="invalid-span-calc_formula_nombre" class="invalid-span text-danger"></span>
+				</div>
+				<div>
+					<label for="calc_descripcion">Descripción de formula</label>
+					<input type="text" class="form-control" id="calc_descripcion" name="calc_descripcion" data-span="invalid-span-calc_descripcion">
+					<span id="invalid-span-calc_descripcion" class="invalid-span text-danger"></span>
+				</div>
+
+
+				<div class="container text-center my-3">
+					<button type="submit" class="btn btn-info">Probar Formula</button>
+					<button type="button" class="btn btn-info" id="save-form-btn-1">Guardar Formula</button>
+				</div>
+
+
+
 			</div>
+			
+		</form>
 
-			<div>
-				<button class="btn btn-info" id="ver_palabras_reservadas">Ver palabras reservadas</button>
+		<dialog id="lista_variables">
+			<div class="h2 text-center">Palabras reservadas</div>
+			<div class="container p-0">
 			</div>
+			<div class="container text-right">
+				<button class="btn btn-danger" id="cerrar_dialog">Cerrar</button>
+				
+			</div>
+		</dialog>
 
-		</div>
-
-		<form action="" method="POST" onsubmit="return false" id="calc_formulario">
-			<div class="container text-center my-3">
+		<form action="" method="POST" onsubmit="return false" id="calc_formulario" class="d-none">
+			<!-- <div class="container text-center my-3">
 				<select class="form-control" name="trabajador_prueba" id="trabajador_prueba-1">
 					<option value="">- Seleccione un trabajador de pruebas - </option>
 				</select>
-			</div>
+			</div> -->
 
 
 			<div class="d-flex justify-content-start align-items-center">
@@ -87,13 +208,13 @@
 			</div>
 
 
-			<div class="container text-center my-3">
+			<div class="container text-center my-3 d-none">
 				<button type="submit" class="btn btn-info">Probar Formula</button>
 				<button type="button" class="btn btn-info" id="save-form-btn-1">Guardar Formula</button>
 			</div>
 		</form>
 
-		<form action="" method="POST" onsubmit="return false" id="calc_formulario_lista">
+		<form action="" method="POST" onsubmit="return false" id="calc_formulario_lista" class="d-none">
 
 			<div class="container text-center my-3">
 				<select class="form-control" name="trabajador_prueba" id="trabajador_prueba-2">
@@ -102,7 +223,7 @@
 			</div>
 
 
-			<div class="container" id="container_condicionales">
+			<div class="container" id="container_condicionales_old">
 				<!-- <div id="calc_lista-condicion-1">
 					<label for="calc_condicional">Condición - 1</label>
 					<input required type="text" class="form-control" id="calc_condicional-condicion-1" name="calc_condicional-condicion-1" data-span="invalid-span-calc_condicional-condicion-1">
@@ -135,7 +256,7 @@
 				<span id="invalid-span-calc_descripcion-2" class="invalid-span text-danger"></span>
 			</div>
 
-			<div class="text-center">
+			<div class="text-center d-none">
 				<button type="submit" class="btn btn-info">Probar Formula</button>
 				<button type="button" class="btn btn-info" id="save-form-btn-2">Guardar Formula</button>
 			</div>
@@ -143,18 +264,6 @@
 		</form>
 
 
-		
-
-
-		<dialog id="lista_variables">
-			<div class="h2 text-center">Palabras reservadas</div>
-			<div class="container p-0">
-			</div>
-			<div class="container text-right">
-				<button class="btn btn-danger" id="cerrar_dialog">Cerrar</button>
-				
-			</div>
-		</dialog>
 
 		<script>
 
@@ -163,8 +272,215 @@
 
 			let palabras_reservadas;
 			document.addEventListener("DOMContentLoaded", function(){
+				load_calc_functions();
+				document.getElementById('calc_formulario_conjunto').action_form='testing_calc';
+				document.getElementById('calc_formulario_conjunto').onsubmit=function(e){
+					e.preventDefault();
+					if(this.sending == true){
+						return false;
+					}
 
-				add_lista_condicional();
+
+					var datos = new FormData(this);
+					datos = calc_formData_maker(datos,this);
+
+					if(datos===false){
+						this.action_form='testing_calc';
+						return false;
+					}
+
+					if(this.action_form=='testing_calc'){
+						var lista_inputs = this.querySelectorAll("input:not([disabled]):not([type='checkbox']):not([id='calc_formula_nombre']):not([id='calc_descripcion'])")
+					}
+					else {
+						var lista_inputs = this.querySelectorAll("input:not([disabled]):not([type='checkbox'])")
+					}
+					valid_form = false;
+					lista_inputs.forEach((x)=>{
+						if(!x.validarme()){
+							if(valid_form===false){
+								valid_form = x;
+							}
+						}
+					})
+
+					if(valid_form!== false){
+						valid_form.focus();
+						return false;
+					}
+
+
+					if(document.getElementById('lista_condicionales').checked){// es una lista de condiciones
+
+						// TESTING ***********************************
+
+						if(this.action_form == "save_calc")
+						{
+							this.action_form = "testing_calc";
+							datos.append("accion","guardar_lista_formulas_condicionales");
+						}
+						else{
+							datos.append("accion","lista_formulas_condicionales");
+						}
+
+						var this_form = this; 
+						enviaAjax(datos,function(respuesta, exito, fail){
+						
+							var lee = JSON.parse(respuesta);
+							if(lee.resultado == "leer_formula_condicional"){
+
+								if(lee.tipo=="condicional" && lee.total == null){
+									muestraMensaje("Advertencia", "La condicional no se cumplió en ningún caso", "¡");
+								}
+								else{
+									muestraMensaje("Exito", `Fue evaluada la formula '${lee.formula}' con un resultado de : ${lee.total}`, "s");
+								}
+								this_form.tested_form = true; 
+							}
+							else if (lee.resultado == "calc_guardar_formula_lista"){
+								muestraMensaje("Exito", "La formula ha sido guardada exitosamente", "s");
+								this_form.reset();
+								this_form.tested_form = false;
+								update_reserved_words();
+								document.getElementById('container_condicionales').innerHTML='';
+								add_lista_condicional();
+								add_lista_condicional();
+								this_form.querySelectorAll("input").forEach((x)=>{
+									x.classList.remove("is-invalid","is-valid");
+								})
+							}
+							else if (lee.resultado == 'is-invalid'){
+								muestraMensaje(lee.titulo, lee.mensaje,"error");
+							}
+							else if(lee.resultado == "error"){
+								muestraMensaje(lee.titulo, lee.mensaje,"error");
+								console.error(lee.mensaje);
+							}
+							else if(lee.resultado == "console"){
+								console.log(lee.mensaje);
+							}
+							else{
+								muestraMensaje(lee.titulo, lee.mensaje,"error");
+							}
+						});
+
+						// SAVING  **************************************
+
+					}
+					else{ // no es una lista de condiciones
+
+						// TESTING ***********************************
+
+						if(this.action_form == 'testing_calc'){
+
+							var this_form = this; 
+
+							datos.append("accion","calc_formula");
+							
+							enviaAjax(datos,function(respuesta, exito, fail){
+							
+								var lee = JSON.parse(respuesta);
+								if(lee.resultado == "leer_formula"){
+									if(lee.tipo=="condicional" && lee.total == null){
+										muestraMensaje("Advertencia", "La condicional no se cumplió en ningún caso", "¡");
+									}
+									else{
+										muestraMensaje("Exito", "El total es :"+lee.total, "s");
+									}
+									this_form.tested_form=true;
+								}
+								else if (lee.resultado == 'is-invalid'){
+									muestraMensaje(lee.titulo, lee.mensaje,"error");
+								}
+								else if(lee.resultado == "error"){
+									muestraMensaje(lee.titulo, lee.mensaje,"error");
+									console.error(lee.mensaje);
+								}
+								else if(lee.resultado == "console"){
+									console.log(lee.mensaje);
+								}
+								else{
+									muestraMensaje(lee.titulo, lee.mensaje,"error");
+								}
+							}).p.finally((e)=>{
+								this_form.sending=undefined;
+							});
+						}
+						else if(this.action_form == 'save_calc'){
+							this.action_form="testing_calc";
+
+							datos.append("accion","guardar_formula");
+
+							var this_form =this; 
+							enviaAjax(datos,function(respuesta, exito, fail){
+							
+								var lee = JSON.parse(respuesta);
+								if(lee.resultado == "calc_guardar_formula"){
+									console.log(lee);
+									muestraMensaje("Exito", "La formula fue guardada exitosamente", "s");
+									reset_calc_form(this_form);
+									update_reserved_words();
+								}
+								else if (lee.resultado == 'is-invalid'){
+									muestraMensaje(lee.titulo, lee.mensaje,"error");
+								}
+								else if(lee.resultado == "error"){
+									muestraMensaje(lee.titulo, lee.mensaje,"error");
+									console.error(lee.mensaje);
+								}
+								else if(lee.resultado == "console"){
+									console.log(lee.mensaje);
+								}
+								else{
+									muestraMensaje(lee.titulo, lee.mensaje,"error");
+								}
+							}).p.finally((e)=>{
+								this_form.sending=undefined;
+							});
+
+
+						}
+						else {
+							muestraMensaje("Error", "Error al enviar el formulario, contacte con un administrador", "e");
+							console.error("position");
+						}
+
+						// SAVING  **************************************
+
+
+					}
+
+
+					// datos.append("accion","queso");
+					// var this_form = this; 
+					// enviaAjax(datos,function(respuesta, exito, fail){
+
+					
+					// 	var lee = JSON.parse(respuesta);
+					// 	if(lee.resultado == "queso"){
+							
+					// 	}
+					// 	else if (lee.resultado == 'is-invalid'){
+					// 		muestraMensaje(lee.titulo, lee.mensaje,"error");
+					// 	}
+					// 	else if(lee.resultado == "error"){
+					// 		muestraMensaje(lee.titulo, lee.mensaje,"error");
+					// 		console.error(lee.mensaje);
+					// 	}
+					// 	else if(lee.resultado == "console"){
+					// 		console.log(lee.mensaje);
+					// 	}
+					// 	else{
+					// 		muestraMensaje(lee.titulo, lee.mensaje,"error");
+					// 	}
+					// }).p.finally((x)=>{
+					// 	this_form.sending = undefined;
+					// });
+
+
+				};
+
+				/*add_lista_condicional();
 				add_lista_condicional();
 				
 				update_reserved_words();
@@ -238,8 +554,8 @@
 
 
 
-
-				document.getElementById('calc_formulario').action_form="testing_calc";
+*/
+			/*	document.getElementById('calc_formulario').action_form="testing_calc";
 				document.getElementById('calc_formulario').tested_form=false;
 				document.getElementById('calc_formulario').onsubmit=function(e){
 					e.preventDefault();
@@ -386,7 +702,8 @@
 						muestraMensaje("Error", "Error en el envío del formulario contacte con un administrador", "e");
 						this.sending=undefined;
 					}
-				};
+				};*/
+/*
 
 				document.getElementById('trabajador_prueba-1').onchange = document.getElementById('trabajador_prueba-2').onchange=function (e){
 					this.setCustomValidity('');
@@ -400,8 +717,8 @@
 					return false;
 				};
 
-
-				document.getElementById('calc_formulario_lista').action_form="testing_calc";
+*/
+			/*	document.getElementById('calc_formulario_lista').action_form="testing_calc";
 				document.getElementById('calc_formulario_lista').tested_form=false;
 				document.getElementById('calc_formulario_lista').onsubmit=function(e){
 					//data-variables_container
@@ -497,7 +814,6 @@
 					}
 
 
-					var this_form = this; 
 
 					datos.delete("calc_condicional-condicion");
 					datos.delete("calc_formula_input-condicion");
@@ -505,6 +821,7 @@
 
 					datos.consoleAll();
 
+					var this_form = this; 
 					enviaAjax(datos,function(respuesta, exito, fail){
 					
 						var lee = JSON.parse(respuesta);
@@ -544,8 +861,8 @@
 							muestraMensaje(lee.titulo, lee.mensaje,"error");
 						}
 					});
-				};
-
+				};*/
+/*
 
 				document.getElementById('lista_condicionales').onclick=function(){
 					if(this.checked){
@@ -557,7 +874,7 @@
 						document.getElementById('calc_formulario_lista').classList.add("d-none");	
 					}
 				};
-				document.getElementById('lista_condicionales').onclick();
+				document.getElementById('lista_condicionales').onclick();*/
 
 
 
@@ -599,6 +916,18 @@
 					if(found==false){
 						document.querySelector("#lista_variables>div.container").appendChild(crearElem("div",'class,container text-center',"No Hay Palabras Reservadas"));	
 					}
+					// load_formulas_form("TIEMPO_TRABAJADOR+a+b",'','',{a:'5','b':'2'});
+					// lista_probar = Array();
+
+					// lista_probar.push({formula:'TIEMPO_TRABAJADOR+a+b', variables:{a:'1',b:'97'}, condicional:"2>3"})
+					// lista_probar.push({formula:'TIEMPO_TRABAJADOR+a+b', variables:{a:'1',b:'98'}, condicional:"2>4"})
+					// lista_probar.push({formula:'TIEMPO_TRABAJADOR+a+b', variables:{a:'1',b:'99'}, condicional:"2>5"})
+
+					// //load_formulas_form(formula,nombre='',descripcion='',variables='',condicional='',lista = false)
+
+					// load_formulas_form(lista_probar,"testing_load",'success');
+					// console.error("quitar esto");
+
 				});
 			}
 
@@ -611,9 +940,10 @@
 				evento_formula(input,false);
 				input.autocomplete="off";
 				var span = crearElem("span",`id,invalid-span-id_calc_var_${name},class,invalid-span text-danger`);
-				var col1 =crearElem("div","class,col-6 d-flex justify-content-end align-items-center") ;
+				var col1 =crearElem("div","class,col-6 d-flex justify-content-end") ;
 				col1.appendChild(label);
 				var col2 =crearElem("div","class,col");
+
 				if(palabras_reservadas[name]){
 					col2.innerHTML = palabras_reservadas[name].descrip;
 
@@ -642,6 +972,7 @@
 				if(variables===true){
 
 					func2= function(elem){
+
 
 						var contenedor_variables = elem.dataset.variables_container;
 						lista = elem.value.match(/[a-zA-Z](?:[_-]*[a-zA-Z]*)*/g);
@@ -681,18 +1012,18 @@
 			}
 
 
-			function add_lista_condicional(){
+			function add_lista_condicional(condicional='',formula='',variables=''){
 				var lista_condicionales_actuales = document.querySelectorAll("#container_condicionales>div[id^='calc_lista-condicion-']");
 
 				var n = lista_condicionales_actuales.length + 1;
 
 				var div = crearElem("div",`id,calc_lista-condicion-${n}`,`
 					<label for="calc_condicional">Condición - ${n}</label>
-					<input required type="text" class="form-control" id="calc_condicional-condicion-${n}" name="calc_condicional-condicion" data-span="invalid-span-calc_condicional-condicion-${n}">
+					<input required type="text" class="form-control" id="calc_condicional-condicion-${n}" name="calc_condicional-condicion" data-span="invalid-span-calc_condicional-condicion-${n}" value="${condicional}">
 					<span id="invalid-span-calc_condicional-condicion-${n}" class="invalid-span text-danger"></span>
 
 					<label for="calc_formula_input">Formula - ${n}</label>
-					<input required type="text" class="form-control" id="calc_formula_input-condicion-${n}" name="calc_formula_input-condicion" data-span="invalid-span-calc_formula_input-condicion-${n}" data-variables_container="list_calc_variables-condicion-${n}" data-condicion="calc_condicional-condicion-${n}" data-orden="${n}">
+					<input required type="text" class="form-control" id="calc_formula_input-condicion-${n}" name="calc_formula_input-condicion" data-span="invalid-span-calc_formula_input-condicion-${n}" data-variables_container="list_calc_variables-condicion-${n}" data-condicion="calc_condicional-condicion-${n}" data-orden="${n}" value="${formula}">
 					<span id="invalid-span-calc_formula_input-condicion-${n}" class="invalid-span text-danger"></span>
 
 					<div class="container lista-variables">
@@ -703,6 +1034,27 @@
 
 				evento_formula(document.getElementById(`calc_formula_input-condicion-${n}`));
 				evento_condicional(document.getElementById(`calc_condicional-condicion-${n}`));
+
+				if(variables!==''){
+
+					document.getElementById(`calc_formula_input-condicion-${n}`).onkeyup({key:''});
+
+
+
+					document.getElementById(`calc_formula_input-condicion-${n}`);
+
+					var_container = `list_calc_variables-condicion-${n}`;
+
+					for( [key,value] of Object.entries(variables) ){
+
+						document.getElementById(var_container).querySelectorAll("input").forEach((x)=>{
+							if(x.dataset.var==key){
+								x.value = value;
+							}
+						})
+
+					}
+				}
 
 
 
@@ -723,8 +1075,8 @@
 				add_lista_condicional();
 				add_lista_condicional();
 				update_reserved_words();
-				evento_formula(calc_formula_input);
-				
+				evento_formula(document.getElementById('calc_formula_input'));
+
 
 				var datos = new FormData();
 				datos.append("accion","get_lista_trabajadores");
@@ -735,7 +1087,6 @@
 
 						lee.mensaje.forEach((elem)=>{
 							document.getElementById('trabajador_prueba-1').appendChild(crearElem("option",`value,${elem.id}`,elem.nombre));
-							document.getElementById('trabajador_prueba-2').appendChild(crearElem("option",`value,${elem.id}`,elem.nombre));
 						});
 						
 					}
@@ -789,15 +1140,227 @@
 
 				document.getElementById('lista_condicionales').onclick=function(){
 					if(this.checked){
-						document.getElementById('calc_formulario').classList.add("d-none");
-						document.getElementById('calc_formulario_lista').classList.remove("d-none");
+						document.getElementById('formulario_calc_normal').classList.add("d-none");
+						document.getElementById('formulario_calc_lista_condicionales').classList.remove("d-none");
+
+						document.getElementById('formulario_calc_normal').querySelectorAll("input").forEach((e)=>{
+							e.disabled=true;
+						});
+						document.getElementById('formulario_calc_lista_condicionales').querySelectorAll("input").forEach((e)=>{
+							e.disabled=false;
+						});
+
 					}
 					else {
-						document.getElementById('calc_formulario').classList.remove("d-none");
-						document.getElementById('calc_formulario_lista').classList.add("d-none");	
+						document.getElementById('formulario_calc_normal').classList.remove("d-none");
+						document.getElementById('formulario_calc_lista_condicionales').classList.add("d-none");	
+						document.getElementById('formulario_calc_lista_condicionales').querySelectorAll("input").forEach((e)=>{
+							e.disabled=true;
+						});
+						document.getElementById('formulario_calc_normal').querySelectorAll("input").forEach((e)=>{
+							e.disabled=false;
+						});
+						document.getElementById('calc_condicional_check').onclick();
 					}
 				};
+				document.getElementById('lista_condicionales').onclick();
 
+				document.getElementById('trabajador_prueba-1').onchange = function (e){
+					this.setCustomValidity('');
+				}
+
+
+				document.getElementById('save-form-btn-1').onclick =function(e){
+					e.preventDefault();
+
+					this.closest("form").action_form = "save_calc";
+					this.closest("form").querySelector("button[type='submit']").click();
+					return false;
+				};
+
+			}
+
+			function calc_formData_maker(datos=false,form=false){
+				if(datos===false){
+					muestraMensaje("Error", "debe pasar por argumento el FormData", "e");
+					console.error("debe pasar por argumento el FormData");
+					return false;
+				}
+				if(form===false){
+					muestraMensaje("Error", "debe pasar por argumento el formulario", "e");
+					console.error("debe pasar por argumento el formulario");
+					return false;
+				}
+
+				if(form.action_form == 'save_calc' && (form.tested_form==false || typeof form.tested_form === 'undefined')){
+					muestraMensaje("Error", "Debe probar la formula al menos una vez antes de guardarla", "e");
+					return false;
+				}
+
+
+				if(form.action_form == 'testing_calc'){
+					document.getElementById('trabajador_prueba-1').setCustomValidity('');
+					if(document.getElementById('trabajador_prueba-1').value==''){
+						document.getElementById('trabajador_prueba-1').setCustomValidity('Selecciona un trabajador en la lista');
+						document.getElementById('trabajador_prueba-1').reportValidity();
+						return false;
+					}
+				}
+				else if(form.action_form=='save_calc'){
+					var temp1 = form.calc_formula_nombre.validarme();
+					var temp2 = form.calc_descripcion.validarme();
+					if(!temp1){
+						form.calc_formula_nombre.focus();
+						return false;
+					}
+					else if(!temp2){
+						form.calc_descripcion.focus();
+						return false;
+					}
+
+				}
+				else{
+					muestraMensaje("Error", '', "e");
+					console.error("El formulario debe tener la propiedad action_form");
+					return false;
+				}
+
+				if(document.getElementById('lista_condicionales').checked){//lista de condicionales
+
+					datos.delete("calc_condicional-condicion");
+					datos.delete("calc_formula_input-condicion");
+					datos.delete("variables_calc");
+
+
+					formulas_tosend=[];
+
+					lista_formulas = form.querySelectorAll("input[id^='calc_formula_input-condicion-']");
+
+					lista_formulas.forEach((elem)=>{
+						var obj = {};
+						var condicion = document.getElementById(elem.dataset.condicion).value;
+						var formula = elem.value;
+						obj.orden = elem.dataset.orden;
+						obj.condiciones = condicion;
+						obj.formula = formula;
+						obj.variables = null;
+						var variables = document.querySelectorAll(`#${elem.dataset.variables_container} input`);
+
+						if(variables.length>0){
+							obj.variables = {} ;
+							variables.forEach((x)=>{
+								obj.variables[x.dataset.var] = x.value;
+								//obj.variables.push({name:x.dataset.var,value:x.value});
+							})
+						}
+
+						formulas_tosend.push(obj);
+					});
+
+					datos.append("formulas",JSON.stringify(formulas_tosend));
+
+
+
+				}
+				else{//sin lista de condicionales
+
+
+
+					var variables = document.querySelectorAll("#list_calc_variables input");
+
+					if(variables.length>0){
+						obj = {} ;
+						variables.forEach((x)=>{
+							obj[x.dataset.var] = x.value;
+						})
+
+						datos.append("variables",JSON.stringify(obj));
+					}
+
+				}
+
+				datos.consoleAll();
+				return datos;
+
+
+			}
+
+			function load_formulas_form(formula,nombre='',descripcion='',variables='',condicional='',lista = false){
+				if(Array.isArray(formula)){
+					console.table(formula);
+					document.getElementById('container_condicionales').innerHTML='';
+					for(elem of formula){
+						elem['variables'] = elem['variables'] || {};
+						elem['condicional'] = elem['condicional'] || '';
+
+						document.getElementById('lista_condicionales').checked=true;
+						document.getElementById('lista_condicionales').onclick();
+
+						load_formulas_form(elem['formula'] ,nombre ,descripcion ,elem['variables'] ,elem['condicional'],true);
+					}
+				}else{
+					if(lista){
+						add_lista_condicional(condicional, formula, variables);
+					}
+					else{
+						document.getElementById('lista_condicionales').checked=false;
+						document.getElementById('lista_condicionales').onclick();
+
+						if(condicional!=''){
+							document.getElementById('calc_condicional_check').checked=true;
+							document.getElementById('calc_condicional').value = condicional;
+						}
+						else{
+							document.getElementById('calc_condicional_check').checked=false;
+							document.getElementById('calc_condicional').value = '';
+						}
+						document.getElementById('calc_condicional_check').onclick();
+
+						document.getElementById('calc_formula_input').value=formula;
+						document.getElementById('calc_formula_input').onkeyup({key:''});
+
+
+						var var_container = document.getElementById('calc_formula_input').dataset.variables_container;
+
+
+
+
+						for( [key,value] of Object.entries(variables) ){
+
+							document.getElementById(var_container).querySelectorAll("input").forEach((x)=>{
+								if(x.dataset.var==key){
+									x.value = value;
+								}
+							})
+
+						}
+
+						document.getElementById('calc_formula_nombre').value = nombre;
+						document.getElementById('calc_descripcion').value = descripcion;
+
+
+
+
+
+
+
+					}
+				}
+
+			}
+
+			function reset_calc_form(form){
+				form.reset();
+				document.getElementById('container_condicionales').innerHTML='';
+				add_lista_condicional();
+				add_lista_condicional();
+
+				document.getElementById('calc_condicional_check').checked=false;
+				document.getElementById('calc_condicional_check').onclick();
+
+				document.getElementById('calc_formula_input').onkeyup({key:''});
+				document.getElementById('calc_formula_input').classList.remove("is-invalid");
+				document.getElementById(document.getElementById('calc_formula_input').dataset.span).innerHTML='';
 			}
 
 		</script>

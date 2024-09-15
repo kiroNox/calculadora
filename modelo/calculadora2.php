@@ -82,12 +82,13 @@ trait Calculadora2{
 			return $resultado;
 		};
 		$descrip = "Calcula el tiempo del trabajador en años";
+		$descrip = "Devuelve el tiempo del trabajador en años";
 		$this->set_calc_function("TIEMPO_TRABAJADOR",$descrip,$fun,false,true);
 
 		$fun = function(){
 			return 0;
 		};
-		$descrip="galleta XD ";
+		$descrip="galleta XD (probando loqueras devuelve 0)";
 		$this->set_calc_function("GALLETAS",$descrip,$fun,false);
 
 		// otras funciones....
@@ -1148,7 +1149,7 @@ trait Calculadora2{
 			$r['formula'] =  $last;
 			if($before_transaction === false or $commit_on_end === true){
 				if($this->con->inTransaction()){
-					$this->con->commit(); //TODO poner esto
+					//$this->con->commit(); //TODO poner esto
 				}
 			}
 		
@@ -1247,7 +1248,7 @@ trait Calculadora2{
 
 		 	if($before_transaction === false or $commit_on_end === true){
 		 		if($this->con->inTransaction()){
-		 			$this->con->commit(); //TODO poner esto
+		 			//$this->con->commit(); //TODO poner esto
 		 		}
 		 	}
 		 
