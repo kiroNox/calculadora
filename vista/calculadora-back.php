@@ -340,15 +340,7 @@
 							else if (lee.resultado == "calc_guardar_formula_lista"){
 								muestraMensaje("Exito", "La formula ha sido guardada exitosamente", "s");
 								reset_calc_form(this_form);
-								this_form.reset();
-								this_form.tested_form = false;
-								update_reserved_words();
-								document.getElementById('container_condicionales').innerHTML='';
-								add_lista_condicional();
-								add_lista_condicional();
-								this_form.querySelectorAll("input").forEach((x)=>{
-									x.classList.remove("is-invalid","is-valid");
-								})
+								
 							}
 							else if (lee.resultado == 'is-invalid'){
 								muestraMensaje(lee.titulo, lee.mensaje,"error");
@@ -898,7 +890,6 @@
 
 				
 					var lee = JSON.parse(respuesta);
-					console.log(lee);
 					var found = false;
 					palabras_reservadas = {};
 					document.querySelector("#lista_variables>div.container").innerHTML='';
@@ -1151,6 +1142,7 @@
 							e.disabled=false;
 						});
 
+
 					}
 					else {
 						document.getElementById('formulario_calc_normal').classList.remove("d-none");
@@ -1280,7 +1272,7 @@
 
 				}
 
-				datos.consoleAll();
+				//datos.consoleAll();
 				return datos;
 
 
@@ -1288,7 +1280,6 @@
 
 			function load_formulas_form(formula,nombre='',descripcion='',variables='',condicional='',lista = false){
 				if(Array.isArray(formula)){
-					console.table(formula);
 					document.getElementById('container_condicionales').innerHTML='';
 					for(elem of formula){
 						elem['variables'] = elem['variables'] || {};
@@ -1351,9 +1342,7 @@
 			}
 
 			function reset_calc_form(form){
-				console.log("document.getElementById('lista_condicionales').checked", document.getElementById('lista_condicionales').checked);
 				form.reset();
-				console.log("document.getElementById('lista_condicionales').checked", document.getElementById('lista_condicionales').checked);
 				document.getElementById('container_condicionales').innerHTML='';
 				add_lista_condicional();
 				add_lista_condicional();
@@ -1365,11 +1354,17 @@
 				document.getElementById('lista_condicionales').onclick();
 
 				document.getElementById('calc_formula_input').onkeyup({key:''});
-				document.getElementById('calc_formula_input').classList.remove("is-invalid");
 				document.getElementById(document.getElementById('calc_formula_input').dataset.span).innerHTML='';
 				form.action_form = 'testing_calc';
 				form.tested_form = false;
-				
+
+				update_reserved_words();
+				form.querySelectorAll("input").forEach((x)=>{
+					x.classList.remove("is-invalid","is-valid");
+				})
+
+
+
 			}
 
 		</script>
