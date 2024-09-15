@@ -55,7 +55,7 @@ trait Calculadora2{
 
 	PRIVATE function add_calc_system_function(){
 		
-		$fun = function(){
+		$fun = function(){// sera pasada como argumento
 
 			$resultado = null;
 
@@ -81,14 +81,16 @@ trait Calculadora2{
 			}
 			return $resultado;
 		};
-		$descrip = "Calcula el tiempo del trabajador en años";
+
+
 		$descrip = "Devuelve el tiempo del trabajador en años";
 		$this->set_calc_function("TIEMPO_TRABAJADOR",$descrip,$fun,false,true);
 
 		$fun = function(){
 			return 0;
 		};
-		$descrip="galleta XD (probando loqueras devuelve 0)";
+
+		$descrip="galleta XD (probando loqueras devuelve 0) esta 'formula' o 'funcion' se escribe directamente en el trait lo que permite optener por ejemplo el tiempo del trabajador el metodo se llama 'add_calc_system_function'";
 		$this->set_calc_function("GALLETAS",$descrip,$fun,false);
 
 		// otras funciones....

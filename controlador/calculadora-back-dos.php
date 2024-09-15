@@ -4,7 +4,6 @@
 		$cl = new Clase_prueba2;
 
 
-
 		if(!empty($_POST)){// si hay alguna consulta tipo POST
 			$accion = $_POST["accion"];// siempre se pasa un parametro con la accion que se va a realizar
 			if($accion == "calc_formula"){
@@ -16,11 +15,7 @@
 					$variables=null;
 
 					if(isset($_POST["variables"])){
-						$temp = json_decode($_POST["variables"]);
-						$variables= [];
-						foreach ($temp as $elem) {
-							$cl->add_var($elem->name,$elem->value,$variables);
-						}
+						$variables = json_decode($_POST["variables"],true);
 					}
 
 
@@ -34,11 +29,7 @@
 					$variables=null;
 
 					if(isset($_POST["variables"])){
-						$temp = json_decode($_POST["variables"]);
-						$variables= [];
-						foreach ($temp as $elem) {
-							$cl->add_var($elem->name,$elem->value,$variables);
-						}
+						$variables = json_decode($_POST["variables"],true);
 					}
 					
 					echo json_encode($cl->leer_formula($_POST["calc_formula_input"],$variables));
