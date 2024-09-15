@@ -56,12 +56,8 @@
 				}
 
 				if(isset($_POST["variables"])){
-					$temp = json_decode($_POST["variables"]);
-					$variables= [];
-					foreach ($temp as $elem) {
-						$cl->add_var($elem->name,$elem->value,$variables);
-					}
-					$variables = json_encode($variables);
+					$temp = json_decode($_POST["variables"],true);
+					$variables = json_encode($temp);
 				}
 
 

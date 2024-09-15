@@ -527,15 +527,17 @@ trait Calculadora2{
 
 
 						if ((isset($formula[$temp_key - 2]) and preg_match("/$operador/", $formula[$temp_key - 2])) or ($temp_key - 2) < 0 ){
-							if(($temp < 0 or $temp > 0 ) and $anterior == '-'){
-
+							if($anterior =='-'){
 								$temp = -1 * $temp;
-
-								$formula[$key] = $temp;
-								unset($formula[$temp_key - 1]);
-								$formula = array_values($formula);
-								continue;
 							}
+							else{
+								$temp = 1 * $temp;
+							}
+
+							$formula[$key] = $temp;
+							unset($formula[$temp_key - 1]);
+							$formula = array_values($formula);
+							continue;
 						}
 					}
 
@@ -561,15 +563,19 @@ trait Calculadora2{
 
 
 								if ((isset($formula[$temp_key - 2]) and preg_match("/$operador/", $formula[$temp_key - 2])) or ($temp_key - 2) < 0 ){
-									if(($temp < 0 or $temp > 0 ) and $anterior == '-'){
-
-										$temp = -1 * $temp;
+									//if(($temp < 0 or $temp > 0 ) and $anterior == '-'){
+										if($anterior =='-'){
+											$temp = -1 * $temp;
+										}
+										else{
+											$temp = 1 * $temp;
+										}
 
 										$formula[$key] = $temp;
 										unset($formula[$temp_key - 1]);
 										$formula = array_values($formula);
 										continue;
-									}
+									//}
 								}
 							}
 
@@ -611,14 +617,45 @@ trait Calculadora2{
 							throw new Exception($form_resp["mensaje"], $form_resp["calc_error"]);
 						}
 
-						$formula[$key] = $form_resp["total"];
+						$temp = $form_resp["total"];
+						//$formula[$key] = $form_resp["total"];
+
 					}
 					else{
 						$form_resp = $this->leer_formula_condicional($formula_form);
-						$formula[$key] = $form_resp["total"];
+						$temp = $form_resp["total"];
+						//$formula[$key] = $form_resp["total"];
+					}
+					$temp_key = intval($key);
+
+					if (isset($formula[$temp_key - 1]) and preg_match("/^\+$ | ^\-$|/", $formula[$temp_key - 1])){
+						$anterior = $formula[$temp_key - 1];
+						// si el anterior al actual existe y si es un signo de "+" o "-"
+
+						
+
+
+						if ((isset($formula[$temp_key - 2]) and preg_match("/$operador/", $formula[$temp_key - 2])) or ($temp_key - 2) < 0 ){
+							if($anterior =='-'){
+								$temp = -1 * $temp;
+							}
+							else{
+								$temp = 1 * $temp;
+							}
+
+							$formula[$key] = $temp;
+							unset($formula[$temp_key - 1]);
+							$formula = array_values($formula);
+							continue;
+						}
 					}
 
+
+
+					$formula[$key] = $temp;
 					unset($this->calc_evaluando->{$value});
+					continue;
+
 				}
 				else{
 
@@ -1151,7 +1188,7 @@ trait Calculadora2{
 			$r['formula'] =  $last;
 			if($before_transaction === false or $commit_on_end === true){
 				if($this->con->inTransaction()){
-					//$this->con->commit(); //TODO poner esto
+					$this->con->commit(); //TODO poner esto
 				}
 			}
 		
@@ -1246,11 +1283,10 @@ trait Calculadora2{
 		 	$r['resultado'] = 'calc_guardar_formula_lista';
 		 	$r['titulo'] = 'Éxito';
 		 	$r['mensaje'] =  "";
-		 	//$this->con->commit();
 
 		 	if($before_transaction === false or $commit_on_end === true){
 		 		if($this->con->inTransaction()){
-		 			//$this->con->commit(); //TODO poner esto
+		 			$this->con->commit(); //TODO poner esto
 		 		}
 		 	}
 		 

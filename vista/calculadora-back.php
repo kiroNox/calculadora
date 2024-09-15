@@ -339,6 +339,7 @@
 							}
 							else if (lee.resultado == "calc_guardar_formula_lista"){
 								muestraMensaje("Exito", "La formula ha sido guardada exitosamente", "s");
+								reset_calc_form(this_form);
 								this_form.reset();
 								this_form.tested_form = false;
 								update_reserved_words();
@@ -1350,7 +1351,9 @@
 			}
 
 			function reset_calc_form(form){
+				console.log("document.getElementById('lista_condicionales').checked", document.getElementById('lista_condicionales').checked);
 				form.reset();
+				console.log("document.getElementById('lista_condicionales').checked", document.getElementById('lista_condicionales').checked);
 				document.getElementById('container_condicionales').innerHTML='';
 				add_lista_condicional();
 				add_lista_condicional();
@@ -1358,9 +1361,15 @@
 				document.getElementById('calc_condicional_check').checked=false;
 				document.getElementById('calc_condicional_check').onclick();
 
+
+				document.getElementById('lista_condicionales').onclick();
+
 				document.getElementById('calc_formula_input').onkeyup({key:''});
 				document.getElementById('calc_formula_input').classList.remove("is-invalid");
 				document.getElementById(document.getElementById('calc_formula_input').dataset.span).innerHTML='';
+				form.action_form = 'testing_calc';
+				form.tested_form = false;
+				
 			}
 
 		</script>
