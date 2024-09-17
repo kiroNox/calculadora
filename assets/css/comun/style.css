@@ -1,0 +1,309 @@
+.show-password-container{
+	position: relative;
+}
+.show-password-container input{
+	padding-right: 2.5rem;
+	background-image: none !important;
+}
+.show-password-container .show-password-btn{
+	position: absolute;
+	top: 0;
+	right: 0;
+	cursor: pointer;
+	height: 100%;
+	width: 2.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.show-password-container input:disabled + .show-password-btn{
+	opacity: .5;
+	cursor: default;
+}
+
+.cursor-pointer{
+	cursor: pointer !important;
+}
+.row-cursor-pointer tr {
+	cursor: pointer;
+}
+.no-select/*Evita seleccion (sombreado azul)*/
+{
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+.d-table.table-middle .d-table-cell,
+.table-middle tbody tr td,
+.table-middle tbody tr th{
+	vertical-align: middle;
+}
+main.main-content{
+	height: 100%;
+	position:relative;
+	min-height: calc(100vh - 10.675rem);
+}
+
+main .loader-main, body>.loader-body{
+	position: absolute;
+	z-index: 1000;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	background-color: rgba(0,0,0,.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	color: white
+}
+
+body>.loader-body{
+	z-index: 1070;
+	width: 100vw;
+	height: 100vh;
+	position: fixed;
+}
+
+main .loader-main:before, body>.loader-body:before{
+	content: "Cargando";
+	font-size: 2rem;
+	-webkit-animation: loadingText .75s linear infinite;
+	animation: loadingText .75s linear infinite;
+}
+main .loader-main:after, body>.loader-body:after{
+	content: "";
+	display: inline-block;
+	width: 12rem;
+	height: 12rem;
+	vertical-align: text-bottom;
+	border: 0.35em solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	-webkit-animation: spinner-border .75s linear infinite;
+	animation: spinner-border .75s linear infinite;
+	position: absolute;
+}
+
+@keyframes loadingText {
+  0%{
+  	transform: translateY(0);
+  }
+  25%{
+  	transform: translateY(5px);
+  }
+  75%{
+  	transform: translateY(-5px);
+  }
+  100%{
+  	transform: translateY(0);
+  }
+}
+
+.scroll-bar-style{
+	--color-bar: #fff;
+	--color-bar2: #a0a8b0;
+	--color-bar3: #343a40;
+}
+
+/* Target the standard scrollbar properties (fallback for non-WebKit browsers) */
+.scroll-bar-style {
+  scrollbar-width: thin; /* Firefox, Safari (recent versions) */
+  scrollbar-color: var(--color-bar2) var(--color-bar); /* Firefox, Safari (recent versions) */
+}
+
+/* Target WebKit browsers (Chrome, Safari (older versions), Edge) for more customization */
+.scroll-bar-style::-webkit-scrollbar {
+  width: 10px;
+  height: 7.5px;
+}
+
+/* Track (WebKit browsers) */
+.scroll-bar-style::-webkit-scrollbar-track {
+  background: none;
+  background: var(--color-bar);
+  /*background-image: linear-gradient(180deg,#4e73df 10%,#224abe 100%);*/
+  border-radius: 5px;
+}
+
+.scroll-bar-style::-webkit-scrollbar-track-piece {
+  background: var(--color-bar);
+  /*background-image: linear-gradient(180deg,#4e73df 10%,#224abe 100%);*/
+  border-radius: 5px;
+}
+
+/* Handle (WebKit browsers) */
+.scroll-bar-style::-webkit-scrollbar-thumb {
+  background: var(--color-bar2);
+  border-radius: 5px;
+}
+
+/* Handle on hover (WebKit browsers) */
+.scroll-bar-style::-webkit-scrollbar-thumb:hover {
+  background: var(--color-bar3);
+}
+
+.table-cell-aling-middle td,
+.table-cell-aling-middle th
+
+{
+	vertical-align: middle !important;
+}
+
+
+
+.check-button:not(input){
+	--size-toggler:0.75em;
+	--btn-radius:1em;
+	display: inline-block;
+	position: relative;
+	width: 2.3em;
+	height: 1.2em;
+	min-width: 2.3em;
+	min-height: 1.2em;
+	border-width: 0.0625em;
+	border-color: #858796;
+	border-style: solid;
+	border-radius: var(--btn-radius);
+	background-color: white;
+	margin: 0;
+	-moz-user-select: -moz-none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	padding: 0.125em;
+	cursor: pointer;
+
+}
+.check-button:not(input)::before{
+	content: '';
+	display: block;
+	margin: 0;
+	padding:0;
+	width: 100%;
+	height: 100%;
+	border-width: 0.0625em;
+	border-style: solid;
+	border-color: #858796;
+	border-radius: var(--btn-radius);
+	transition: 100ms background-color;
+}
+.check-button:not(input)::after{
+	position: absolute;
+	left: 0.125em;
+	top:0.18em;
+	content: '';
+	display: block;
+	width: var(--size-toggler);
+	height:var(--size-toggler);;
+	border-width: 0.0625em;
+	border-style: solid;
+	border-color: #858796;
+	background-color: white;
+	border-radius: 100%;
+	transition: left 100ms;
+}
+input[type='checkbox'].check-button{
+	display: none;
+}
+input[type='checkbox'].check-button:checked + .check-button::before{
+
+	background-color: var(--primary);
+}
+input[type='checkbox'].check-button:checked + .check-button::after{
+	left: calc(100% - (var(--size-toggler) + 0.125em));
+}
+
+
+
+input[type='checkbox'].check-button:disabled + .check-button::after,
+input[type='checkbox'].check-button:disabled + .check-button::before{
+	background-color: #eaecf4 !important;
+}
+
+
+
+
+
+
+/* dark-mode a eliminar*/
+
+
+	.dark-mode{
+		--dark-back:#1f1f1f;
+		/* me estaba quedando ciego XD
+			esto esta echo pa lante no es para producción
+		*/
+	}
+	.dark-mode .card,
+	.dark-mode .card-header,
+	.dark-mode .modal-content,
+	.dark-mode .modal-footer,
+	.dark-mode .form-control,
+	.dark-mode #wrapper,
+	.dark-mode #content-wrapper{
+		background-color: var(--dark-back) !important;
+		color: #fff;
+	}
+
+	.dark-mode .navbar{
+		background-color: var(--dark-back) !important;
+		color: #fff;
+		box-shadow: 0 0.15rem 1.75rem 0 rgb(255 255 255 / 15%) !important;
+	}
+	.dark-mode footer{
+		background-color: var(--dark-back) !important;
+	}
+
+	.dark-mode .nav-tabs>.nav-item.active{
+		background-color: #4f4f4f;
+		color: #d1d3e2;
+	}
+
+
+	.darkmode_btn-container{
+		display: block;
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		opacity: .5;
+		border: 1px solid var(--dark);
+		z-index: 1005;
+	}
+	.darkmode_btn-container:hover{
+		background-color: #1f1f1f;
+		opacity: 1;
+	}
+
+	.dark-mode input[type='checkbox'].check-button + .check-button::before{
+
+		background-color: var(--dark-back);
+	}
+	.dark-mode input[type='checkbox'].check-button:checked + .check-button::before{
+
+		background-color: var(--primary);
+	}
+
+	.dark-mode input[type='checkbox'].check-button:disabled + .check-button::before{
+		background-color: #6a6a6a !important;
+	}
+
+	.dark-mode input[type='checkbox'].check-button:disabled + .check-button::after{
+		background-color: #cdcdcd !important;
+	}
+	.dark-mode .form-control:disabled{
+		background-color: #7a7a7a !important;
+	}
+/* dark-mode a eliminar*/
+
+

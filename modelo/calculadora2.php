@@ -34,9 +34,9 @@ trait Calculadora2{
 		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\]';
 		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\{';
 		$this->calc_diff_var_formula[] = $this->calc_separadores[] = '\\}';
-		$this->calc_separadores[] = '[a-zA-Z]+(?:[_]*[a-zA-Z]*)?';
+		$this->calc_separadores[] = '[_]*[a-zA-Z]+(?:[_]*[a-zA-Z]*)*';
 		//$this->calc_separadores[] = '[0-9]+([\\.][0-9]+)?';
-		$this->calc_separadores[] = '__.*__';
+		//$this->calc_separadores[] = '__.*__';
 
 		$this->calc_posicion = 0;
 		$this->counter_loop = 0;
@@ -54,10 +54,13 @@ trait Calculadora2{
 	}
 
 	PRIVATE function add_calc_system_function(){
-		
-		$fun = function(){// sera pasada como argumento
 
-			$resultado = null;
+
+		
+		$fun = function(){// sera pasada como argumento  devuelve el tiempo del trabajador en años
+			$this->validar_conexion($this->con);
+
+			$resultado = 0;
 
 			if(isset($this->id_trabajador)){
 				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
@@ -66,13 +69,227 @@ trait Calculadora2{
 					$consulta = null;
 					$consulta = $this->con->prepare("SELECT TIMESTAMPDIFF(YEAR, t.creado ,CURRENT_DATE) as tiempo from trabajadores as t WHERE id_trabajador = ?");
 					$consulta->execute([$this->id_trabajador]);
-					$resp = $consulta->fetch(PDO::FETCH_ASSOC);
-					$resultado = intval($resp["tiempo"]);
+
+
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = intval($resp["tiempo"]);
+					}
+
+					$consulta = null;
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+		};
+		$descrip = "Devuelve el tiempo del trabajador en años";
+		$this->set_calc_function("TIEMPO_TRABAJADOR",$descrip,$fun,false,true);
+
+
+		$fun = function(){ // devuelve el sueldo base del trabajador
+			$this->validar_conexion($this->con);
+
+
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT sb.sueldo_base FROM trabajadores as t LEFT JOIN sueldo_base as sb ON sb.id_trabajador = t.id_trabajador WHERE t.id_trabajador = ?;");
+					$consulta->execute([$this->id_trabajador]);
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = floatval(number_format($resp["sueldo_base"],2,'.',''));
+					}
+
+					$consulta = null;
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+		};
+		$descrip = "Devuelve el sueldo base del trabajador";
+		$this->set_calc_function("SUELDO_BASE",$descrip,$fun,false,true);
+
+
+		
+		$descrip = "Devuelve uno (1) si el trabajador es un medico cero (0) si no";
+		$this->set_calc_function("MEDICO",$descrip, function(){ 
+			$this->validar_conexion($this->con);
+
+
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT sb.sector_salud FROM trabajadores as t LEFT JOIN sueldo_base as sb ON sb.id_trabajador = t.id_trabajador WHERE t.id_trabajador = ?;");
+					$consulta->execute([$this->id_trabajador]);
+
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = floatval(number_format($resp["sector_salud"],2,'.',''));
+					}
+
+					$consulta = null;
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+		}
+		,false,true);
+
+		$this->set_calc_function("HIJOS","Devuelve el número total de hijos",function(){
+			$this->validar_conexion($this->con);
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT DISTINCT COUNT(h.id_hijo) hijos FROM trabajadores AS t JOIN hijos as h ON (h.id_trabajador_madre = t.id_trabajador OR h.id_trabajador_padre = t.id_trabajador) WHERE t.id_trabajador = ?;");
+					$consulta->execute([$this->id_trabajador]);
+
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = floatval(number_format($resp["hijos"],2,'.',''));
+					}
+
+					$consulta = null;
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+
+		},false,true);
+		$this->set_calc_function("HIJOS_MENORES","Devuelve el numero total de hijos menores de edad",function(){
+			$this->validar_conexion($this->con);
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT DISTINCT COUNT(h.id_hijo) hijos_menores FROM trabajadores AS t JOIN hijos as h ON (h.id_trabajador_madre = t.id_trabajador OR h.id_trabajador_padre = t.id_trabajador) WHERE t.id_trabajador = ? AND TIMESTAMPDIFF(YEAR, h.fecha_nacimiento ,CURRENT_DATE) < 18;");
+					$consulta->execute([$this->id_trabajador]);
+
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = floatval(number_format($resp["hijos_menores"],2,'.',''));
+					}
+
+					$consulta = null;
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+
+		},false,true);
+		$this->set_calc_function("HIJOS_MAYORES","Devuelve el numero total de hijos mayores de edad",function(){
+			$this->validar_conexion($this->con);
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT DISTINCT COUNT(h.id_hijo) hijos_mayores FROM trabajadores AS t JOIN hijos as h ON (h.id_trabajador_madre = t.id_trabajador OR h.id_trabajador_padre = t.id_trabajador) WHERE t.id_trabajador = ? AND TIMESTAMPDIFF(YEAR, h.fecha_nacimiento ,CURRENT_DATE) > 18;");
+					$consulta->execute([$this->id_trabajador]);
+
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = floatval(number_format($resp["hijos_mayores"],2,'.',''));
+					}
+
+					$consulta = null;
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+
+		},false,true);
+		$this->set_calc_function("HIJOS_DISCAPACIDAD","Devuelve el numero total de hijos con una discapacidad",function(){
+			$this->validar_conexion($this->con);
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$consulta = $this->con->prepare("SELECT DISTINCT COUNT(h.id_hijo) hijos_discapacidad FROM trabajadores AS t JOIN hijos as h ON (h.id_trabajador_madre = t.id_trabajador OR h.id_trabajador_padre = t.id_trabajador) WHERE t.id_trabajador = ? AND h.discapacidad = 1;");
+					$consulta->execute([$this->id_trabajador]);
+
+					if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+						$resultado = floatval(number_format($resp["hijos_discapacidad"],2,'.',''));
+					}
+
+					$consulta = null;
 
 				}
 				else{
-					throw new Exception("El trabajador no existe", 1);
-					
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
+				}
+			}
+			else{
+				throw new Exception("EL id del trabajador no esta definido", 1);
+				
+			}
+			return $resultado;
+
+		},false,true);
+
+		$fn_general = function($fn_interna){
+			$this->validar_conexion($this->con);
+			$resultado = 0;
+
+			if(isset($this->id_trabajador)){
+				$consulta = $this->con->prepare("SELECT 1 FROM trabajadores WHERE id_trabajador = ?;");
+				$consulta->execute([$this->id_trabajador]);
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){// el trabajador existe
+					$consulta = null;
+					$resultado = $fn_interna();
+
+				}
+				else{
+					throw new Exception("El trabajador no existe ($this->id_trabajador)", 1);
 				}
 			}
 			else{
@@ -83,17 +300,54 @@ trait Calculadora2{
 		};
 
 
-		$descrip = "Devuelve el tiempo del trabajador en años";
-		$this->set_calc_function("TIEMPO_TRABAJADOR",$descrip,$fun,false,true);
 
-		$fun = function(){
-			return 0;
-		};
+		$this->set_calc_function("LUNES_MES","Devuelve el total de lunes en el mes actual",function() use ($fn_general){
 
-		$descrip="galleta XD (probando loqueras devuelve 0) esta 'formula' o 'funcion' se escribe directamente en el trait lo que permite optener por ejemplo el tiempo del trabajador el metodo se llama 'add_calc_system_function'";
-		$this->set_calc_function("GALLETAS",$descrip,$fun,false);
+			return $fn_general(function(){
+				$consulta = $this->con->query("SELECT f_contar_lunes(CURRENT_DATE,3) lunes;");
+
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+					return $resp["lunes"];
+				}
+				else{
+					return 0;
+				}
+
+			});
+		},false,true);
+
+		$this->set_calc_function("LUNES_QUINCENA_UNO","Devuelve el total de lunes en la primera quincena del mes actual",function() use ($fn_general){
+
+			return $fn_general(function(){
+				$consulta = $this->con->query("SELECT f_contar_lunes(CURRENT_DATE,1) lunes;");
+
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+					return $resp["lunes"];
+				}
+				else{
+					return 0;
+				}
+
+			});
+		},false,true);
+
+		$this->set_calc_function("LUNES_QUINCENA_DOS","Devuelve el total de lunes en la primera quincena del mes actual (desde el 16 al final del mes)",function() use ($fn_general){
+
+			return $fn_general(function(){
+				$consulta = $this->con->query("SELECT f_contar_lunes(CURRENT_DATE,2) lunes;");
+
+				if($resp = $consulta->fetch(PDO::FETCH_ASSOC)){
+					return $resp["lunes"];
+				}
+				else{
+					return 0;
+				}
+
+			});
+		},false,true);
 
 		// otras funciones....
+		
 	}
 
 	PRIVATE function calc_f_clean_cache(){
@@ -128,29 +382,12 @@ trait Calculadora2{
 			$r["total"] = $this->resolve_groups($formula_array,$formula);
 			$r["formula"] = $this->calc_formula;
 			$r["tipo"] = "normal";
-			//$this->calc_nodes();
-			//$r["total"] = $this->resolve_nodes();
-
-			//$this->calc_resolve();
-
-
-			
-
-			
-			//$r[] = $this->calc_formula;
-
 			$r["variables"] = $this->get_all_var($variables);
 
-			//$r[] = $this->calc_items;
 			$r[] = $formula_array;
 
 		} catch (Exception $e) {
-			if($this->con instanceof PDO){
-				if($this->con->inTransaction()){
-					$this->con->rollBack();
-				}
-			}
-			
+						
 			$r['resultado'] = 'error';
 			$r['titulo'] = "La formula no pudo ser calculada";
 			$r["formula"] = $formula;
@@ -167,26 +404,30 @@ trait Calculadora2{
 			// 118 = La variable/function ... no existe
 
 			if($var_formu!==false){// si no es false significa que estaba evaluando algo y eso seria $var_formu
-				throw new Exception("Error al evaluar '$var_formu' :: ".$e->getMessage(), $e->getCode());
+				if(preg_match("/^\{LANZAR\}\:/", $var_formu)){
+					$var_formu = preg_replace("/^\{LANZAR\}\:/", "", $var_formu);
+					throw new Exception("Error al evaluar '$var_formu' :: ".$e->getMessage(), $e->getCode());
+				}else{
+					$r["mensaje"] = "Error al evaluar '$var_formu'. ".$e->getMessage();
+				}
 			}
-
-			//$r["path"] = $e->getTrace();
 			$r["path2"] = $e->getTraceAsString();
-			//$r["lista"] = $this->calc_items;
 		}
 
 		return $r;
 
 	}
 
-	PUBLIC function leer_formula_condicional($condiciones,$formula= null,$variables=null){
+	PUBLIC function leer_formula_condicional($condiciones,$formula= null,$variables=null,$condicional_n = null){
 		try {
 			if(is_array($condiciones)){// Significa que es una matriz con los datos (asociativo de los argumentos)
 
+				$n_lista_control = 1;
 				foreach ($condiciones as $lista) {
 					if(!isset($lista["variables"])) $lista["variables"] = null;
 
-					$leer_formula_condicional = $this->leer_formula_condicional($lista["condiciones"],$lista["formula"],$lista["variables"]);
+
+					$leer_formula_condicional = $this->leer_formula_condicional($lista["condiciones"],$lista["formula"],$lista["variables"],$n_lista_control++);
 					if($leer_formula_condicional["resultado"] == 'error'){
 						throw new Exception($leer_formula_condicional["mensaje"], $leer_formula_condicional["calc_error"]);
 					}
@@ -227,10 +468,20 @@ trait Calculadora2{
 
 
 				preg_match("/[\<][\>]|[<][=]|[>][=]|[\<]|[\>]|[\=]/", $condiciones,$igualdad);// obtengo la igualdad
-				
-				$condicion_1 = $this->leer_formula($condiciones_separadas[0]);
 
-				$condicion_2 = $this->leer_formula($condiciones_separadas[2]);
+				if($condicional_n===null){
+					$entorno = "Condicional";
+				}
+				else if(is_numeric($condicional_n)){
+					$entorno = "Condicional $condicional_n";
+				}
+				else{
+					$entorno = false;
+				}
+				
+				$condicion_1 = $this->leer_formula($condiciones_separadas[0],null,true,$entorno);
+
+				$condicion_2 = $this->leer_formula($condiciones_separadas[2],null,true,$entorno);
 
 				if($condicion_1["resultado"] == "error"){
 					throw new Exception($condicion_1["mensaje"], $condicion_1["calc_error"]);
@@ -278,13 +529,22 @@ trait Calculadora2{
 				}
 
 				if($respuesta === true){
-					$r = $this->leer_formula($formula,$variables);
+
+					if(is_numeric($condicional_n)){
+						$entorno = "Formula - $condicional_n";
+					}
+					else{
+						$entorno = false;
+					}
+
+					$r = $this->leer_formula($formula, $variables, true, $entorno);
 					if($r["resultado"] == 'error'){
 						throw new Exception($r["mensaje"], $r["calc_error"]);
 					}
 					$r["resultado"] = "leer_formula_condicional";
 					$r["tipo"] = "condicional";
 					$r["formula"] = $formula;
+					$r["n_formula"] = (is_numeric($condicional_n))?$condicional_n:null;
 				}
 				else{
 					$r =[];
@@ -293,7 +553,7 @@ trait Calculadora2{
 					$r["formula"] = $formula;
 					$r["variables"] = $variables;
 					$r["tipo"] = "condicional";
-
+					$r["msm"] = "Condicionales falsas";
 				}
 
 
@@ -301,11 +561,30 @@ trait Calculadora2{
 			else{
 
 				//throw new Exception("Error en la condición '$condiciones' debe tener al menos un signo de comparación (<,>,<>,=)", 1);
+				if($condicional_n === null){
+					$entorno = "Condicional";
+				}
 
-				$cond = $this->leer_formula($condiciones);
+				else if(is_numeric($condicional_n)){
+					$entorno = "Condicional - $condicional_n";
+				}
+				else{
+					$entorno = false;
+				}
 
-				if($cond["resultado"] == "leer_formula"){
-					if(($cond["total"] > 0)){
+				$cond = $this->leer_formula($condiciones,null,true,$entorno); // lee la condicional
+
+				if(is_numeric($condicional_n)){
+					$entorno = "Formula - $condicional_n";
+				}
+				else{
+					$entorno = false;
+				}
+
+				if($cond["resultado"] == "leer_formula"){// si la evaluación de la condicional fue exitosa
+					if(($cond["total"] > 0)){ // si el resultado es mayor a cero (verdadero)
+
+
 
 						$r = $this->leer_formula($formula,$variables);
 						if($r["resultado"] == 'error'){
@@ -314,13 +593,14 @@ trait Calculadora2{
 						$r["resultado"] = "leer_formula_condicional";
 						$r["tipo"] = "condicional";
 						$r["formula"] = $formula;
+						$r["n_formula"] = (is_numeric($condicional_n))?$condicional_n:null;
+
 					}
 					else{
 						$r =[];
 						$r["resultado"] = "leer_formula_condicional";
 						$r["total"] = NULL;
 						$r["formula"] = $formula;
-						$r["variables"] = $variables;
 						$r["tipo"] = "condicional";
 
 					}
@@ -333,30 +613,13 @@ trait Calculadora2{
 			}
 		
 		} catch (Exception $e) {
-			if($this->con instanceof PDO){
-				if($this->con->inTransaction()){
-					$this->con->rollBack();
-				}
-			}
-			
 			$r['resultado'] = 'error';
 			$r['titulo'] = 'La formula no pudo ser calculada';
 			$r["formula"] = $formula;
 
-
-			if($e->getCode() == 118){
-				$r['mensaje'] =  $e->getMessage();
-			}
-			else{
-				$r["mensaje"] = $e->getMessage();
-				$r["calc_error"] = $e->getCode();
-				// 103 = Las agrupaciones no pueden estar vaciás
-				// 118 = La variable/function ... no existe
-			}
-
-			//$r["path"] = $e->getTrace();
+			$r['mensaje'] =  $e->getMessage();
+			$r["calc_error"] = $e->getCode();
 			$r["path2"] = $e->getTraceAsString();
-			//$r["lista"] = $this->calc_items;
 		}
 
 
@@ -369,7 +632,7 @@ trait Calculadora2{
 		return $r;
 	}
 
-	PUBLIC function resolve_groups($formula_array,$formula = null){
+	PRIVATE function resolve_groups($formula_array,$formula = null){
 
 		for($i=0;$i<count($formula_array);$i++){
 			$token = $formula_array[$i];
@@ -390,6 +653,8 @@ trait Calculadora2{
 	}
 
 	PRIVATE function calc_separador ($string){
+
+
 		try {
 
 			//$string = $this->calc_formula;
@@ -496,7 +761,6 @@ trait Calculadora2{
 
 	PRIVATE function calc_variables(&$formula,$variables){
 
-
 		$operador = [
 			"^[\\+]$",
 			"^[\\-]$",
@@ -509,6 +773,7 @@ trait Calculadora2{
 		$operador = implode("|", $operador);
 
 		foreach ($formula as $key => $value) {
+
 			if(isset($formula[$key]) and preg_match("/[a-zA-Z]+(?:[_]*[a-zA-Z]*)?/", $formula[$key] )){// si encuentra nombres de variables o funciones en la formula
 				if( ($temp = $this->get_calc_function($formula[$key])) !== null){// si es una funcion
 					$temp = floatval(number_format($temp,2,'.',''));
@@ -586,6 +851,7 @@ trait Calculadora2{
 				else if(isset($this->calc_list_formulas->{$value})){// si es una formula almacenada con un nombre
 
 
+
 					if(isset($this->calc_evaluando->{$value})){
 						throw new Exception("Se esta pidiendo evaluar la formula '$value' en ciclo infinito revise la formula", 1);
 					}
@@ -598,6 +864,7 @@ trait Calculadora2{
 
 					$name_form = $this->calc_list_formulas->{$value}["name"];
 					$formula_form = $this->calc_list_formulas->{$value}["formula"];
+
 
 					if(!is_array($formula_form)){// si no es una lista de formulas con condicionales
 						$variables_form = $this->calc_list_formulas->{$value}["variables"];
@@ -650,7 +917,9 @@ trait Calculadora2{
 						}
 					}
 
-
+					if($temp === null){
+						$temp = 0;
+					}
 
 					$formula[$key] = $temp;
 					unset($this->calc_evaluando->{$value});
@@ -666,7 +935,7 @@ trait Calculadora2{
 		}
 	}
 
-	PUBLIC function add_list_formulas($name,$formula,$descrip,$variables=null,$condiciones = null,$id_formula=null,$replace=false){
+	PRIVATE function add_list_formulas($name,$formula,$descrip,$variables=null,$condiciones = null,$id_formula=null,$replace=false){
 
 		if(!isset($this->calc_list_formulas->{$name}) or ( isset($this->calc_list_formulas->{$name}) and $replace = true ) ){
 			if(!isset($this->calc_f->{$name})){// si la funcion no existe
@@ -864,20 +1133,38 @@ trait Calculadora2{
 
 
 	PUBLIC function get_calc_reserved_words(){
-		$lista = [];
-		foreach ($this->calc_f as $key => $value) {
-			$lista[] = ["name" => $key,"descrip"=> $value->descrip];
-		}
+		try {
 
-		foreach ($this->calc_list_formulas as $key => $value) {
-			$temp = ["name" => $key,"descrip" => $value["descrip"]];
+			$this->calc_check_status();
 
-			if(isset($value["id_formula"])){
-				$temp["id"] = $value["id_formula"];
+			$lista = [];
+			foreach ($this->calc_f as $key => $value) {
+				$lista[] = ["name" => $key,"descrip"=> $value->descrip];
 			}
-			$lista[] = $temp;
-		 }
-		return $lista;
+
+			foreach ($this->calc_list_formulas as $key => $value) {
+				$temp = ["name" => $key,"descrip" => $value["descrip"]];
+
+				if(isset($value["id_formula"])){
+					$temp["id"] = $value["id_formula"];
+				}
+				$lista[] = $temp;
+			 }
+			
+			$r['resultado'] = 'get_calc_reserved_words';
+			$r['titulo'] = 'Éxito';
+			$r['mensaje'] =  $lista;
+		
+		} catch (Exception $e) {
+			$r['resultado'] = 'error';
+			$r['titulo'] = 'Error';
+			$r['mensaje'] =  $e->getMessage();
+			//$r['mensaje'] =  $e->getMessage().": LINE : ".$e->getLine();
+		}
+		
+		return $r;
+
+		
 	}
 
 
@@ -889,7 +1176,7 @@ trait Calculadora2{
 
 
 
-	PUBLIC function calc_nodes(&$formula_array = '' ,$formula=null){ // convierte todos los numero y los operadores en nodos
+	PRIVATE function calc_nodes(&$formula_array = '' ,$formula=null){ // convierte todos los numero y los operadores en nodos
 		$anterior = false;
 
 
@@ -942,7 +1229,7 @@ trait Calculadora2{
 		}
 	}
 
-	PUBLIC function resolve_nodes(&$formula_array = ''){// llama a que los nodos se resuelvan
+	PRIVATE function resolve_nodes(&$formula_array = ''){// llama a que los nodos se resuelvan
 		if($formula_array == ''){
 			unset($formula_array);
 
@@ -961,11 +1248,11 @@ trait Calculadora2{
 
 
 
-	PUBLIC function set_calc_function($name,$descrip,$func,$arguments,$cache=false){//nombre de la funcion, la funcion misma, si tendra argumentos de la funcion si o no BOOL(no se usa),y si guarda el resultado en cache
+	PRIVATE function set_calc_function($name,$descrip,$func,$arguments,$cache=false){//nombre de la funcion, la funcion misma, si tendra argumentos de la funcion si o no BOOL(no se usa),y si guarda el resultado en cache
 		$this->calc_f->{$name} = new calc_functions($name,$descrip,$func,$arguments,$cache);
 	}
 
-	PUBLIC function get_calc_function($name){
+	PRIVATE function get_calc_function($name){
 		if(isset($this->calc_f->{$name})){
 			return $this->calc_f->{$name}->execute();
 		}
@@ -978,17 +1265,18 @@ trait Calculadora2{
 
 
 
-	PUBLIC function set_calc_formula(&$value){
+	PRIVATE function set_calc_formula(&$value){
 		$value = preg_replace("/\s+/", "", $value);
 	}
 
-	PUBLIC function get_var($key,$lista){
+	PRIVATE function get_var($key,$lista){
 		if($lista === null){
 			$lista = [];
 		}
 		if(is_array($lista)){
 			if(isset($lista[$key])){
 				$resp = $lista[$key];
+
 
 
 				if($resp == '__!__'){
@@ -1005,7 +1293,7 @@ trait Calculadora2{
 
 					$temp_variables[$key] = "__!__";
 
-					$resp = $this->leer_formula($resp,$temp_variables,false,$key);
+					$resp = $this->leer_formula($resp,$temp_variables,false,"{LANZAR}:".$key);
 
 					$resp = $resp["total"];
 
@@ -1020,7 +1308,11 @@ trait Calculadora2{
 					$temp = $resp;
 
 					if(isset($lista[$temp])){
-						$resp = $this->get_var($temp,$lista);
+						$temp_variables=$lista;
+
+						$temp_variables[$key] = "__!__";
+
+						$resp = $this->get_var($temp,$temp_variables);
 					}
 					else if( ($func_resp = $this->get_calc_function($temp) ) !== null){
 						$resp = $func_resp;
@@ -1036,7 +1328,6 @@ trait Calculadora2{
 			}
 		}
 		else{
-			show_varx($lista);
 			throw new Exception("la lista de variables debe ser un arreglo", 1);
 			
 		}
