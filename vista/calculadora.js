@@ -124,11 +124,12 @@ function add_lista_condicional(condicional='',formula='',variables=''){
 	var n = lista_condicionales_actuales.length + 1;
 
 	var div = crearElem("div",`id,calc_lista-condicion-${n},class,position-relative`,`
-		<label for="calc_condicional">Condición - ${n}</label>
+		<label for="calc_condicional-condicion-${n}">Condición - ${n}</label>
 		<input required type="text" class="form-control" id="calc_condicional-condicion-${n}" name="calc_condicional-condicion" data-span="invalid-span-calc_condicional-condicion-${n}" value="${condicional}">
+		<div class="suggestions" data-input="calc_condicional-condicion-${n}"></div>
 		<span id="invalid-span-calc_condicional-condicion-${n}" class="invalid-span text-danger"></span>
 
-		<label for="calc_formula_input">Formula - ${n}</label>
+		<label for="calc_formula_input-condicion-${n}">Formula - ${n}</label>
 		<input required type="text" class="form-control" id="calc_formula_input-condicion-${n}" name="calc_formula_input-condicion" data-span="invalid-span-calc_formula_input-condicion-${n}" data-variables_container="list_calc_variables-condicion-${n}" data-condicion="calc_condicional-condicion-${n}" data-orden="${n}" value="${formula}">
 		<div class="suggestions" data-input="calc_formula_input-condicion-${n}"></div>
 		<span id="invalid-span-calc_formula_input-condicion-${n}" class="invalid-span text-danger"></span>
@@ -141,6 +142,7 @@ function add_lista_condicional(condicional='',formula='',variables=''){
 	
 	document.getElementById('container_condicionales').appendChild(div);
 	event_suggestions(div.getElementsByClassName('suggestions')[0]);
+	event_suggestions(div.getElementsByClassName('suggestions')[1]);
 
 
 	evento_formula(document.getElementById(`calc_formula_input-condicion-${n}`));
@@ -252,14 +254,9 @@ function load_calc_functions(){
 
 	eventoKeyup("calc_formula_nombre", /^[_]*[a-zA-Z]+(?:[_]+[a-zA-Z]*)*$/, "El nombre no es valido evite utilizar espacios, tildes, números o la letra 'ñ' ");
 	eventoKeypress("calc_formula_nombre", /^[a-zA-Z_]*$/);
-	eventoKeyup("calc_formula_nombre-2", /^[_]*[a-zA-Z]+(?:[_]+[a-zA-Z]*)*$/, "El nombre no es valido evite utilizar espacios, tildes, números o la letra 'ñ' ");
-	eventoKeypress("calc_formula_nombre-2", /^[a-zA-Z_]*$/);
-	
 
 	eventoKeyup("calc_descripcion", /^[0-9.,\/#!$%\^&\*;:{}=\-_`~()”“\"'…a-zA-Z\säÄëËïÏöÖüÜáéíóúáéíóúÁÉÍÓÚÂÊÎÔÛâêîôûàèìòùÀÈÌÒÙñÑ]+$/, "La descripción no es valida, evite utilizar caracteres especiales");
 	eventoKeypress("calc_descripcion", /^[0-9.,\/#!$%\^&\*;:{}=\-_`~()”“\"'…a-zA-Z\säÄëËïÏöÖüÜáéíóúáéíóúÁÉÍÓÚÂÊÎÔÛâêîôûàèìòùÀÈÌÒÙñÑ]*$/);
-	eventoKeyup("calc_descripcion-2", /^[0-9.,\/#!$%\^&\*;:{}=\-_`~()”“\"'…a-zA-Z\säÄëËïÏöÖüÜáéíóúáéíóúÁÉÍÓÚÂÊÎÔÛâêîôûàèìòùÀÈÌÒÙñÑ]+$/, "La descripción no es valida, evite utilizar caracteres especiales");
-	eventoKeypress("calc_descripcion-2", /^[0-9.,\/#!$%\^&\*;:{}=\-_`~()”“\"'…a-zA-Z\säÄëËïÏöÖüÜáéíóúáéíóúÁÉÍÓÚÂÊÎÔÛâêîôûàèìòùÀÈÌÒÙñÑ]*$/);
 
 
 	evento_condicional(document.getElementById('calc_condicional'));

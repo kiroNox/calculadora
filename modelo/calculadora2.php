@@ -1632,8 +1632,8 @@ class calc_nodo{
 		}
 		$this->resolved = false;
 
-		if((!$left instanceof calc_nodo) and (!is_numeric($left))){throw new Exception("$left no es un numero valido para calcular L", 1);}
-		if($right !=null and(!$right instanceof calc_nodo) and (!is_numeric($right))){throw new Exception("$right no es un numero valido para calcular R", 1);}
+		if((!$left instanceof calc_nodo) and (!is_numeric($left))){throw new Exception("$left no es un numero valido para calcular", 1);}
+		if($right !=null and(!$right instanceof calc_nodo) and (!is_numeric($right))){throw new Exception("$right no es un numero valido para calcular", 1);}
 		$this->leaft = false;// es hoja
 		$this->left = $left;
 		$this->operador = $operador;

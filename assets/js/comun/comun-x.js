@@ -64,15 +64,21 @@ function muestraMensaje(titulo, mensaje = '', icono = '', customProp = false, fu
 			obj[p] = customProp[p];
 		}
 	}
-	if(typeof func === 'function'){
-		Swal.fire(obj).then((result)=>{
-			func(result.isConfirmed,result);
-		});
+	if(!obj.ignore){
+		if(typeof func === 'function'){
+			Swal.fire(obj).then((result)=>{
+				func(result.isConfirmed,result);
+			});
+		}
+		else{
+			Swal.fire(obj);
+		}
 	}
 	else{
-		Swal.fire(obj);
+		func(true);
 	}
 }
+
 let ajaxCounterConsult = 0;
 let ajaxCounterConsult_body = 0;
 function enviaAjax(datos, func_success,func_beforesend="loader_body") {
